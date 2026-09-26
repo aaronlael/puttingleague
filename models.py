@@ -12,6 +12,30 @@ class User(UserMixin, db.Model):
     entries = db.relationship('WeeklyEntry', back_populates='user')
 
 
+class Challenge(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(160), nullable=False, unique=True)
+    description = db.Column(db.String(500), nullable=False, default='')
+    weeks = db.relationship('WeeklyChallenge', back_populates='challenge')
+
+
+class WeeklyChallenge(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    week_key = db.Column(db.String(8), nullable=False, unique=True, index=True)
+    challenge_id = db.Column(db.Integer, db.ForeignKey('challenge.id'), nullable=False)
+    challenge = db.relationship('Challenge', back_populates='weeks')
+
+
+class WeeklyDraw(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    week_key = db.Column(db.String(8), nullable=False, unique=True, index=True)
+    winner_name = db.Column(db.String(120))
+    winner_email = db.Column(db.String(255))
+    winner_total = db.Column(db.Integer)
+    eligible_count = db.Column(db.Integer, nullable=False, default=0)
+    drawn_at = db.Column(db.DateTime(timezone=True), nullable=False)
+
+
 class WeeklyEntry(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)

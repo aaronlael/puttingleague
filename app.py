@@ -2,17 +2,20 @@
 # Imports
 #----------------------------------------------------------------------------#
 
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 import os
+import re
+import secrets
 
 from authlib.integrations.flask_client import OAuth
 from flask import Flask, abort, flash, redirect, render_template, request, url_for
 from flask_login import LoginManager, current_user, login_required, login_user, logout_user
 from flask_wtf import CSRFProtect, FlaskForm
+from sqlalchemy.exc import IntegrityError
 from wtforms import IntegerField
 from wtforms.validators import InputRequired, NumberRange
 
-from models import User, WeeklyEntry, db
+from models import Challenge, User, WeeklyChallenge, WeeklyDraw, WeeklyEntry, db
 
 login_manager = LoginManager()
 login_manager.login_view = 'home'
@@ -30,8 +33,59 @@ class ScoreForm(FlaskForm):
 def current_week(now=None):
     now = now or datetime.now(timezone.utc)
     monday = (now - timedelta(days=now.weekday())).date()
+    return week_key_for(monday), monday
+
+
+def week_key_for(monday):
     iso_year, iso_week, _ = monday.isocalendar()
-    return f'{iso_year}-W{iso_week:02d}', monday
+    return f'{iso_year}-W{iso_week:02d}'
+
+
+def parse_week_key(value):
+    if not re.fullmatch(r'\d{4}-W\d{2}', value or ''):
+        return None
+    try:
+        return date.fromisocalendar(int(value[:4]), int(value[6:]), 1)
+    except ValueError:
+        return None
+
+
+def finalize_completed_weeks(current_week_key):
+    unfinished_weeks = {
+        week_key
+        for (week_key,) in (
+        db.session.query(WeeklyEntry.week_key)
+        .outerjoin(WeeklyDraw, WeeklyDraw.week_key == WeeklyEntry.week_key)
+        .filter(WeeklyEntry.week_key < current_week_key, WeeklyDraw.id.is_(None))
+        .distinct()
+        .order_by(WeeklyEntry.week_key)
+        .all()
+        )
+    }
+    current_monday = parse_week_key(current_week_key)
+    previous_week_key = week_key_for(current_monday - timedelta(days=7))
+    if WeeklyDraw.query.filter_by(week_key=previous_week_key).first() is None:
+        unfinished_weeks.add(previous_week_key)
+
+    for week_key in sorted(unfinished_weeks):
+        entries = WeeklyEntry.query.filter_by(week_key=week_key).all()
+        eligible_entries = [entry for entry in entries if entry.score_count == 5]
+        winner = secrets.choice(eligible_entries) if eligible_entries else None
+        result = WeeklyDraw(
+            week_key=week_key,
+            winner_name=winner.user.name if winner else None,
+            winner_email=winner.user.email if winner else None,
+            winner_total=winner.total if winner else None,
+            eligible_count=len(eligible_entries),
+            drawn_at=datetime.now(timezone.utc),
+        )
+        db.session.add(result)
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            if WeeklyDraw.query.filter_by(week_key=week_key).first() is None:
+                raise
 
 
 def create_app(test_config=None):
@@ -55,14 +109,35 @@ def create_app(test_config=None):
     with app.app_context():
         db.create_all()
 
+    def is_admin(user):
+        allowed_email = app.config.get('ADMIN_EMAIL', '').strip().casefold()
+        return bool(user.is_authenticated and allowed_email and user.email.strip().casefold() == allowed_email)
+
+    @app.context_processor
+    def inject_admin_status():
+        return {'is_admin': is_admin(current_user)}
+
+    @app.before_request
+    def finalize_past_weeks():
+        finalize_completed_weeks(current_week()[0])
+
     @app.get('/')
     def home():
         week_key, week_start = current_week()
+        previous_week_start = week_start - timedelta(days=7)
+        previous_week_key = week_key_for(previous_week_start)
+        scheduled_challenge = WeeklyChallenge.query.filter_by(week_key=week_key).first()
         entries = WeeklyEntry.query.filter_by(week_key=week_key).all()
         standings = sorted(
             entries,
             key=lambda entry: (-entry.total, -entry.score_count, entry.user.name.casefold()),
         )
+        previous_entries = WeeklyEntry.query.filter_by(week_key=previous_week_key).all()
+        previous_standings = sorted(
+            previous_entries,
+            key=lambda entry: (-entry.total, -entry.score_count, entry.user.name.casefold()),
+        )[:5]
+        previous_draw = WeeklyDraw.query.filter_by(week_key=previous_week_key).first()
         player_entry = None
         if current_user.is_authenticated:
             player_entry = WeeklyEntry.query.filter_by(
@@ -75,15 +150,101 @@ def create_app(test_config=None):
             week_start=week_start,
             week_end=week_start + timedelta(days=6),
             standings=standings,
+            previous_week_key=previous_week_key,
+            previous_standings=previous_standings,
+            previous_draw=previous_draw,
             participants=len(entries),
             sessions_total=sum(entry.score_count for entry in entries),
             player_entry=player_entry,
             form=form,
-            weekly_task=app.config.get('WEEKLY_TASK', '20 putts from 20 feet'),
+            weekly_task=(
+                scheduled_challenge.challenge.title
+                if scheduled_challenge
+                else app.config.get('WEEKLY_TASK', '20 putts from 20 feet')
+            ),
+            weekly_description=(
+                scheduled_challenge.challenge.description if scheduled_challenge else ''
+            ),
             google_ready=bool(
                 app.config.get('GOOGLE_CLIENT_ID')
                 and app.config.get('GOOGLE_CLIENT_SECRET')
             ),
+        )
+
+    @app.route('/admin', methods=['GET', 'POST'])
+    @login_required
+    def admin():
+        if not is_admin(current_user):
+            abort(403)
+
+        if request.method == 'POST':
+            action = request.form.get('action')
+            if action == 'add_challenge':
+                title = request.form.get('title', '').strip()
+                description = request.form.get('description', '').strip()
+                if not title or len(title) > 160 or len(description) > 500:
+                    flash('Enter a challenge title (up to 160 characters) and description (up to 500).')
+                elif Challenge.query.filter_by(title=title).first():
+                    flash('A challenge with that title already exists.')
+                else:
+                    db.session.add(Challenge(title=title, description=description))
+                    db.session.commit()
+                    flash('Challenge added.')
+                return redirect(url_for('admin'))
+
+            if action == 'schedule_week':
+                week_key = request.form.get('week_key', '').strip()
+                challenge = db.session.get(Challenge, request.form.get('challenge_id', type=int))
+                if parse_week_key(week_key) is None:
+                    flash('Enter a valid ISO week, such as 2026-W40.')
+                elif challenge is None:
+                    flash('Choose an existing challenge.')
+                else:
+                    assignment = WeeklyChallenge.query.filter_by(week_key=week_key).first()
+                    if assignment is None:
+                        assignment = WeeklyChallenge(week_key=week_key, challenge=challenge)
+                        db.session.add(assignment)
+                    else:
+                        assignment.challenge = challenge
+                    db.session.commit()
+                    flash(f'{week_key} is assigned to {challenge.title}.')
+                return redirect(url_for('admin'))
+
+            if action == 'delete_user':
+                user = db.session.get(User, request.form.get('user_id', type=int))
+                if user is None:
+                    flash('That user no longer exists.')
+                elif user.id == current_user.id:
+                    flash('You cannot delete your own admin account here.')
+                else:
+                    WeeklyEntry.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+                    db.session.delete(user)
+                    db.session.commit()
+                    flash(f'Account {user.email} and its scores were permanently deleted.')
+                return redirect(url_for('admin'))
+
+            abort(400)
+
+        users = User.query.order_by(User.name, User.email).all()
+        user_summaries = [
+            {
+                'user': user,
+                'sessions': sum(entry.score_count for entry in user.entries),
+                'made': sum(entry.total for entry in user.entries),
+                'history': sorted(user.entries, key=lambda entry: entry.week_key, reverse=True),
+            }
+            for user in users
+        ]
+        challenges = Challenge.query.order_by(Challenge.title).all()
+        assignments = WeeklyChallenge.query.order_by(WeeklyChallenge.week_key.desc()).all()
+        weekly_draws = WeeklyDraw.query.order_by(WeeklyDraw.week_key.desc()).limit(12).all()
+        return render_template(
+            'pages/admin.html',
+            users=user_summaries,
+            challenges=challenges,
+            assignments=assignments,
+            weekly_draws=weekly_draws,
+            current_week_key=current_week()[0],
         )
 
     @app.get('/auth/google')

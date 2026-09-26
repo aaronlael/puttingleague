@@ -40,6 +40,7 @@
   <aside class="score-panel">
     <div class="score-panel-top"><span class="score-kicker">THIS WEEK'S TASK</span><span class="week-chip">{{ week_key }}</span></div>
     <h2>{{ weekly_task }}</h2>
+    {% if weekly_description %}<p class="score-intro">{{ weekly_description }}</p>{% endif %}
     <p class="score-intro">Make as many as you can out of 20 putts per session. Play up to five sessions.</p>
     {% if current_user.is_authenticated %}
       {% set score_count = player_entry.score_count if player_entry else 0 %}
@@ -64,5 +65,42 @@
     {% endif %}
     <div class="scoring-rule"><span class="rule-mark">!</span><p><strong>Weekly scoring</strong><br>Most made putts across your sessions tops the leaderboard.</p></div>
   </aside>
+</section>
+
+<section class="history-section">
+  <details class="history-details">
+    <summary>
+      <span class="eyebrow">LAST WEEK / {{ previous_week_key }}</span>
+      <strong>Top five and random winner</strong>
+      <span class="history-toggle">View history</span>
+    </summary>
+    <div class="history-grid">
+      <div>
+        <h2>Top five standings</h2>
+        {% if previous_standings %}
+          <ol class="history-list">
+            {% for entry in previous_standings %}
+              <li><span class="history-rank">{{ '%02d'|format(loop.index) }}</span><span class="history-player">{{ entry.user.name }}<small>{{ entry.score_count }} / 5 rounds</small></span><strong>{{ entry.total }}</strong></li>
+            {% endfor %}
+          </ol>
+        {% else %}
+          <p class="admin-empty">No scores were recorded last week.</p>
+        {% endif %}
+      </div>
+      <aside class="draw-result">
+        <p class="eyebrow">RANDOM DRAW</p>
+        {% if previous_draw and previous_draw.winner_name %}
+          <h3>{{ previous_draw.winner_name }}</h3>
+          <p>{{ previous_draw.winner_total }} made putts · randomly selected from {{ previous_draw.eligible_count }} players who completed all five rounds.</p>
+        {% elif previous_draw %}
+          <h3>No eligible winner</h3>
+          <p>No player completed all five rounds last week.</p>
+        {% else %}
+          <h3>No draw recorded</h3>
+          <p>No completed scores were recorded last week.</p>
+        {% endif %}
+      </aside>
+    </div>
+  </details>
 </section>
 {% endblock %}

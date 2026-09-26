@@ -16,6 +16,7 @@
     <div class="header-account">
       {% if current_user.is_authenticated %}
         <span class="account-name">{{ current_user.name }}</span>
+        {% if is_admin %}<a class="header-link" href="{{ url_for('admin') }}">Admin</a>{% endif %}
         <form method="post" action="{{ url_for('logout') }}" class="inline-form">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button class="text-button" type="submit">Sign out</button>

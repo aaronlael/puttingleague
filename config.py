@@ -11,6 +11,7 @@ DEBUG = False
 SECRET_KEY = os.environ.get('SECRET_KEY')
 GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
+ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'aaron.j.lael@gmail.com')
 WEEKLY_TASK = os.environ.get('WEEKLY_TASK', '20 putts from 20 feet')
 
 # Connect to the database

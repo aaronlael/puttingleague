@@ -1,0 +1,133 @@
+{% extends 'layouts/main.html' %}
+{% block title %}League administration{% endblock %}
+{% block content %}
+<section class="admin-heading">
+  <div>
+    <p class="eyebrow">LEAGUE CONTROL</p>
+    <h1>Administration</h1>
+  </div>
+  <p>Signed in as {{ current_user.email }}</p>
+</section>
+
+<div class="admin-grid">
+  <section class="admin-section">
+    <h2>Add a challenge</h2>
+    <p>Create a reusable challenge, then assign it to any ISO week.</p>
+    <form class="admin-form" method="post" action="{{ url_for('admin') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="add_challenge">
+      <label>Challenge title<input name="title" maxlength="160" required></label>
+      <label>Description<textarea name="description" maxlength="500"></textarea></label>
+      <button type="submit">Add challenge</button>
+    </form>
+
+    <div class="admin-table-wrap">
+      {% if challenges %}
+        <table class="admin-table">
+          <thead><tr><th>CHALLENGE</th><th>DESCRIPTION</th><th class="numeric">WEEKS</th></tr></thead>
+          <tbody>
+            {% for challenge in challenges %}
+              <tr><td>{{ challenge.title }}</td><td>{{ challenge.description or '-' }}</td><td class="numeric">{{ challenge.weeks|length }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="admin-empty">No challenges yet.</p>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="admin-section">
+    <h2>Assign a week</h2>
+    <p>Use ISO week format, for example {{ current_week_key }}. Reassigning a week updates its scheduled challenge.</p>
+    {% if challenges %}
+      <form class="admin-form" method="post" action="{{ url_for('admin') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="schedule_week">
+        <label>ISO week<input name="week_key" pattern="[0-9]{4}-W[0-9]{2}" placeholder="2026-W40" maxlength="8" required></label>
+        <label>Challenge<select name="challenge_id" required>
+          {% for challenge in challenges %}<option value="{{ challenge.id }}">{{ challenge.title }}</option>{% endfor %}
+        </select></label>
+        <button type="submit">Save week assignment</button>
+      </form>
+    {% else %}
+      <p class="admin-empty">Add a challenge before scheduling a week.</p>
+    {% endif %}
+  </section>
+
+  <section class="admin-section admin-section-wide">
+    <h2>Weekly schedule</h2>
+    <div class="admin-table-wrap">
+      {% if assignments %}
+        <table class="admin-table">
+          <thead><tr><th>ISO WEEK</th><th>CHALLENGE</th><th>DESCRIPTION</th></tr></thead>
+          <tbody>{% for assignment in assignments %}<tr><td>{{ assignment.week_key }}</td><td>{{ assignment.challenge.title }}</td><td>{{ assignment.challenge.description or '-' }}</td></tr>{% endfor %}</tbody>
+        </table>
+      {% else %}
+        <p class="admin-empty">No weeks scheduled. Unassigned weeks continue to use the configured default task.</p>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="admin-section admin-section-wide">
+    <h2>Weekly random draws</h2>
+    <p>Draws are recorded on the first request after a week ends. Only players with all five rounds are eligible.</p>
+    <div class="admin-table-wrap">
+      {% if weekly_draws %}
+        <table class="admin-table">
+          <thead><tr><th>WEEK</th><th>WINNER</th><th>CONTACT</th><th class="numeric">ELIGIBLE</th><th class="numeric">WINNER TOTAL</th></tr></thead>
+          <tbody>
+            {% for draw in weekly_draws %}
+              <tr>
+                <td>{{ draw.week_key }}</td>
+                <td>{{ draw.winner_name or 'No eligible winner' }}</td>
+                <td>{{ draw.winner_email or '-' }}</td>
+                <td class="numeric">{{ draw.eligible_count }}</td>
+                <td class="numeric">{{ draw.winner_total if draw.winner_total is not none else '-' }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="admin-empty">No weekly draws recorded yet.</p>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="admin-section admin-section-wide">
+    <h2>Player accounts</h2>
+    <p class="admin-warning">Deleting a player permanently removes their account and every score they submitted. Review the account and scores before confirming.</p>
+    <div class="admin-table-wrap">
+      {% if users %}
+        <table class="admin-table">
+          <thead><tr><th>PLAYER</th><th class="numeric">SESSIONS</th><th class="numeric">MADE</th><th>WEEKLY SCORE HISTORY</th><th>ACTION</th></tr></thead>
+          <tbody>
+            {% for summary in users %}
+              <tr>
+                <td>{{ summary.user.name }}<small>{{ summary.user.email }}</small></td>
+                <td class="numeric">{{ summary.sessions }}</td>
+                <td class="numeric">{{ summary.made }}</td>
+                <td>{% for entry in summary.history %}<small>{{ entry.week_key }}: {{ entry.completed_scores|join(', ') if entry.completed_scores else 'no scores' }}</small>{% else %}<small>No scores submitted</small>{% endfor %}</td>
+                <td>
+                  {% if summary.user.id != current_user.id %}
+                    <form method="post" action="{{ url_for('admin') }}" onsubmit="return confirm('Permanently delete {{ summary.user.email }} and all of their scores?')">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <input type="hidden" name="action" value="delete_user">
+                      <input type="hidden" name="user_id" value="{{ summary.user.id }}">
+                      <button class="danger-button" type="submit">Delete account</button>
+                    </form>
+                  {% else %}
+                    <small>Current admin</small>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="admin-empty">No player accounts.</p>
+      {% endif %}
+    </div>
+  </section>
+</div>
+{% endblock %}
