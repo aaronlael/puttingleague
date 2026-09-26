@@ -5,6 +5,7 @@ Authlib
 requests
 Flask-WTF
 WTForms
+mysql-connector-python
 gunicorn
 coverage
 # ecdsa

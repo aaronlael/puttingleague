@@ -5,7 +5,36 @@ from datetime import timedelta
 from unittest.mock import patch
 
 from app import create_app, current_week, week_key_for
+from config import database_uri_from_environment
 from models import Challenge, User, WeeklyChallenge, WeeklyDraw, WeeklyEntry, db
+
+
+class DatabaseConfigurationTests(unittest.TestCase):
+    def test_defaults_to_sqlite_without_mysql_settings(self):
+        with patch.dict(os.environ, {}, clear=True):
+            database_uri = database_uri_from_environment()
+
+        self.assertTrue(database_uri.startswith('sqlite:///'))
+
+    def test_builds_mysql_url_without_corrupting_password(self):
+        settings = {
+            'PUTTING_LEAGUE_DB_HOST': 'mysql.example.test',
+            'PUTTING_LEAGUE_DB_NAME': 'aaronlael$puttingleague',
+            'PUTTING_LEAGUE_DB_USER': 'league-user',
+            'PUTTING_LEAGUE_DB_PASSWORD': 'p@ss/word',
+        }
+        with patch.dict(os.environ, settings, clear=True):
+            database_uri = database_uri_from_environment()
+
+        self.assertEqual(database_uri.drivername, 'mysql+mysqlconnector')
+        self.assertEqual(database_uri.host, 'mysql.example.test')
+        self.assertEqual(database_uri.database, 'aaronlael$puttingleague')
+        self.assertEqual(database_uri.password, 'p@ss/word')
+
+    def test_rejects_partial_mysql_settings(self):
+        with patch.dict(os.environ, {'PUTTING_LEAGUE_DB_HOST': 'mysql.example.test'}, clear=True):
+            with self.assertRaisesRegex(RuntimeError, 'PUTTING_LEAGUE_DB_NAME'):
+                database_uri_from_environment()
 
 
 class WeeklyLeagueTests(unittest.TestCase):

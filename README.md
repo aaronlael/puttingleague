@@ -42,6 +42,16 @@ Keep the deployed BCSS files in `/home/yourusername/mysite` as they are, includi
    ```
 
     Keep BCSS's existing Basic Auth and MySQL values in its `.env`. The repository's `wsgi.py` requires `BCSS_HOME` and imports `flask_app.py` from that directory.
+    Add the following settings to `/home/yourusername/puttingleague/.env`, using the MySQL host and username from PythonAnywhere/BCSS, and the full name of the new Putting League database. The password can be the same as BCSS's; the separate variable names prevent the app from selecting BCSS's database by mistake.
+
+    ```ini
+    PUTTING_LEAGUE_DB_HOST=your-mysql-host
+    PUTTING_LEAGUE_DB_NAME=yourusername$puttingleague
+    PUTTING_LEAGUE_DB_USER=your-mysql-user
+    PUTTING_LEAGUE_DB_PASSWORD=your-mysql-password
+    ```
+
+    The app creates its tables in this database when it starts. This does not copy data from a previous SQLite `database.db`; back it up and migrate it separately if it contains scores or accounts you need.
 4. Leave the existing `/static/` mapping pointed at `/home/yourusername/mysite/static/`. Add `/puttingleague/static/` mapped to `/home/yourusername/puttingleague/static/`.
 5. In Google Cloud Console, add `https://yourusername.pythonanywhere.com/puttingleague/auth/callback` as an authorized redirect URI. Keep BCSS's domain and other OAuth settings unchanged.
 6. After checking the candidate environment and WSGI paths, select that virtualenv for the existing web app and reload it. Confirm BCSS still opens at `/` and Putting League opens at `/puttingleague`; check the PythonAnywhere error log if startup fails.
