@@ -5,6 +5,7 @@ Authlib
 requests
 Flask-WTF
 WTForms
+gunicorn
 coverage
 # ecdsa
 # paramiko
