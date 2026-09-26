@@ -1,31 +1,51 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import scoped_session, sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
-# from sqlalchemy import Column, Integer, String
-# from app import db
+from flask_login import UserMixin
+from flask_sqlalchemy import SQLAlchemy
 
-engine = create_engine('sqlite:///database.db', echo=True)
-db_session = scoped_session(sessionmaker(autocommit=False,
-                                         autoflush=False,
-                                         bind=engine))
-Base = declarative_base()
-Base.query = db_session.query_property()
+db = SQLAlchemy()
 
-# Set your classes here.
 
-'''
-class User(Base):
-    __tablename__ = 'Users'
-
+class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(120), unique=True)
-    email = db.Column(db.String(120), unique=True)
-    password = db.Column(db.String(30))
+    google_id = db.Column(db.String(255), unique=True, nullable=False)
+    email = db.Column(db.String(255), unique=True, nullable=False)
+    name = db.Column(db.String(120), nullable=False)
+    entries = db.relationship('WeeklyEntry', back_populates='user')
 
-    def __init__(self, name=None, password=None):
-        self.name = name
-        self.password = password
-'''
 
-# Create tables.
-Base.metadata.create_all(bind=engine)
+class WeeklyEntry(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    week_key = db.Column(db.String(8), nullable=False, index=True)
+    week_start = db.Column(db.Date, nullable=False)
+    score_1 = db.Column(db.Integer)
+    score_2 = db.Column(db.Integer)
+    score_3 = db.Column(db.Integer)
+    score_4 = db.Column(db.Integer)
+    score_5 = db.Column(db.Integer)
+    user = db.relationship('User', back_populates='entries')
+
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'week_key', name='one_entry_per_player_week'),
+    )
+
+    @property
+    def scores(self):
+        return [
+            self.score_1,
+            self.score_2,
+            self.score_3,
+            self.score_4,
+            self.score_5,
+        ]
+
+    @property
+    def completed_scores(self):
+        return [score for score in self.scores if score is not None]
+
+    @property
+    def score_count(self):
+        return len(self.completed_scores)
+
+    @property
+    def total(self):
+        return sum(self.completed_scores)

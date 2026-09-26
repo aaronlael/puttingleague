@@ -1,10 +1,68 @@
 {% extends 'layouts/main.html' %}
-{% block title %}Home{% endblock %}
+{% block title %}Weekly standings{% endblock %}
 {% block content %}
+<section class="event-heading">
+  <div class="event-copy">
+    <p class="eyebrow"><span class="live-dot"></span> WEEKLY EVENT <span class="eyebrow-divider">/</span> {{ week_key }}</p>
+    <h1>Make every<br><span>putt count.</span></h1>
+    <p class="event-dates">{{ week_start.strftime('%b') }} {{ week_start.day }} <span>-</span> {{ week_end.strftime('%b') }} {{ week_end.day }} <span class="date-zone">UTC</span></p>
+  </div>
+  <div class="event-stat">
+    <span class="stat-label">PLAYERS THIS WEEK</span>
+    <strong>{{ '%02d'|format(participants) }}</strong>
+    <span class="stat-foot">{{ sessions_total }} sessions logged</span>
+  </div>
+</section>
 
-<div class="page-header">
-  <h1>Sticky footer with fixed navbar</h1>
-</div>
-<p class="lead">Pin a fixed-height footer to the bottom of the viewport in desktop browsers with this custom HTML and CSS. A fixed navbar has been added within <code>#wrap</code> with <code>padding-top: 60px;</code> on the <code>.container</code>.</p>
+<section class="league-grid">
+  <div class="standings-panel">
+    <div class="section-heading">
+      <div><p class="eyebrow">THE FIELD</p><h2>Leaderboard</h2></div>
+      <span class="ranking-note">MOST MADE PUTTS WINS</span>
+    </div>
+    <div class="table-head"><span>PLACE / PLAYER</span><span>SESSIONS</span><span>MADE</span></div>
+    {% if standings %}
+      <ol class="standings-list">
+        {% for entry in standings %}
+          <li class="standings-row {% if current_user.is_authenticated and entry.user_id == current_user.id %}is-you{% endif %}">
+            <span class="player-cell"><span class="rank-number">{{ '%02d'|format(loop.index) }}</span><span class="player-name">{{ entry.user.name }}{% if current_user.is_authenticated and entry.user_id == current_user.id %}<span class="you-tag">YOU</span>{% endif %}</span></span>
+            <span class="sessions-cell"><span class="round-scores">{% for score in entry.completed_scores %}<span>{{ score }}</span>{% endfor %}</span><strong class="sessions-count">{{ entry.score_count }}/5</strong></span>
+            <strong class="total-score">{{ entry.total }}</strong>
+          </li>
+        {% endfor %}
+      </ol>
+    {% else %}
+      <div class="empty-state"><span class="empty-mark">01</span><p>No sessions logged yet.</p><span>Your first session puts you on the board.</span></div>
+    {% endif %}
+    <div class="standings-foot"><span>Weekly totals update after every session.</span><span>UP TO 5 SESSIONS</span></div>
+  </div>
 
+  <aside class="score-panel">
+    <div class="score-panel-top"><span class="score-kicker">THIS WEEK'S TASK</span><span class="week-chip">{{ week_key }}</span></div>
+    <h2>{{ weekly_task }}</h2>
+    <p class="score-intro">Make as many as you can out of 20 putts per session. Play up to five sessions.</p>
+    {% if current_user.is_authenticated %}
+      {% set score_count = player_entry.score_count if player_entry else 0 %}
+      <h3 class="sessions-heading">YOUR SESSIONS <span>{{ score_count }} / 5</span></h3>
+      <div class="score-progress" aria-label="{{ score_count }} of 5 sessions submitted">
+        {% for slot in range(5) %}<span class="progress-slot {% if slot < score_count %}filled{% endif %}">{% if player_entry and player_entry.scores[slot] is not none %}{{ player_entry.scores[slot] }}{% else %}<i>{{ '%02d'|format(slot + 1) }}</i>{% endif %}</span>{% endfor %}
+      </div>
+      {% if score_count < 5 %}
+        <form class="score-form" method="post" action="{{ url_for('submit_score') }}">
+          {{ form.hidden_tag() }}
+          <label for="score">SESSION {{ score_count + 1 }} / 5 - MADE PUTTS</label>
+          <div class="score-input-row">{{ form.score(id='score', min='0', max='20', placeholder='00', inputmode='numeric', required=true) }}<button type="submit" aria-label="Submit made putts">ADD <span>+</span></button></div>
+          {% for error in form.score.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+        </form>
+      {% else %}
+        <div class="card-complete"><span>5 / 5</span><p>Sessions complete. Your weekly total is <strong>{{ player_entry.total }} / 100</strong>.</p></div>
+      {% endif %}
+    {% else %}
+      <p class="score-intro">Sign in to log a session and add your made putts to the weekly total.</p>
+      <a class="google-button" href="{{ url_for('google_login') }}"><span class="google-g">G</span><span>Continue with Google</span><span class="button-arrow">&#8599;</span></a>
+      {% if not google_ready %}<p class="setup-note">Google sign-in needs OAuth credentials in the app environment.</p>{% endif %}
+    {% endif %}
+    <div class="scoring-rule"><span class="rule-mark">!</span><p><strong>Weekly scoring</strong><br>Most made putts across your sessions tops the leaderboard.</p></div>
+  </aside>
+</section>
 {% endblock %}

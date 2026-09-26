@@ -1,6 +1,20 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-## Welcome
+## Putting League
+
+A weekly putting competition with Google sign-in, up to five sessions per player, and a Monday-to-Sunday UTC leaderboard. Each session records made putts for the weekly task (20 putts per session by default, configurable with `WEEKLY_TASK`). Players are ranked by total made putts so far, with completed session count shown beside each total. A new ISO week starts a fresh board while previous weeks remain stored.
+
+### Run locally
+
+1. Create and activate a Python virtual environment.
+2. Install dependencies with `pip install -r requirements.txt`.
+3. Create a Google OAuth 2.0 Web application client. Add `http://localhost:5000/auth/callback` as an authorized redirect URI.
+4. Set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and a private `SECRET_KEY` environment variable.
+5. Start the app with `python app.py` and visit `http://localhost:5000`.
+
+The SQLite database is created as `database.db` on first run. Configure a durable database and HTTPS before deploying publicly.
+
+## Original Flask Boilerplate
 
 Hello. Want to get started with Flask quickly? Good. You came to the right place. This Flask application framework is pre-configured with **Flask-SQLAlchemy**, **Flask-WTF**, **Fabric**, **Coverage**, and the **Bootstrap** frontend (among others). This will get your Flask app up and running on Heroku or PythonAnywhere quickly. Use this starter, boilerplate for all you new Flask projects. Cheers!
 

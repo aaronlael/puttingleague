@@ -1,5 +1,8 @@
 Fabric
 Flask-SQLAlchemy
+Flask-Login
+Authlib
+requests
 Flask-WTF
 WTForms
 coverage
