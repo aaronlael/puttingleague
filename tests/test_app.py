@@ -5,11 +5,14 @@ from datetime import timedelta
 from unittest.mock import patch
 
 from app import create_app, current_week, week_key_for
-from config import database_uri_from_environment
+from config import SQLALCHEMY_ENGINE_OPTIONS, database_uri_from_environment
 from models import Challenge, User, WeeklyChallenge, WeeklyDraw, WeeklyEntry, db
 
 
 class DatabaseConfigurationTests(unittest.TestCase):
+    def test_database_pool_checks_connections_before_use(self):
+        self.assertTrue(SQLALCHEMY_ENGINE_OPTIONS['pool_pre_ping'])
+
     def test_defaults_to_sqlite_without_mysql_settings(self):
         with patch.dict(os.environ, {}, clear=True):
             database_uri = database_uri_from_environment()

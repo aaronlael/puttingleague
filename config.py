@@ -41,3 +41,4 @@ def database_uri_from_environment():
 
 
 SQLALCHEMY_DATABASE_URI = database_uri_from_environment()
+SQLALCHEMY_ENGINE_OPTIONS = {'pool_pre_ping': True}
