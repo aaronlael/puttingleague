@@ -6,6 +6,7 @@ requests
 Flask-WTF
 WTForms
 mysql-connector-python
+python-dotenv
 gunicorn
 coverage
 # ecdsa

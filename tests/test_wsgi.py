@@ -32,6 +32,21 @@ class WSGIMountTests(unittest.TestCase):
         finally:
             response.close()
 
+    def test_putting_league_session_cookie_is_scoped_for_oauth(self):
+        response = self.client.get(
+            '/puttingleague/',
+            base_url='https://league.example.test',
+        )
+        cookies = response.headers.getlist('Set-Cookie')
+
+        self.assertTrue(any(
+            'putting_league_session=' in cookie
+            and 'Path=/puttingleague' in cookie
+            and 'Secure' in cookie
+            and 'SameSite=Lax' in cookie
+            for cookie in cookies
+        ))
+
 
 if __name__ == '__main__':
     unittest.main()
