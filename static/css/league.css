@@ -237,3 +237,29 @@ h2 { font-size: 28px; }
 .draw-result .eyebrow { color: var(--lime); }
 .draw-result p:last-child { color: #bdc6ba; }
 :focus-visible { outline: 2px solid var(--lime); outline-offset: 3px; }
+.draw-wins { display: inline-flex; align-items: center; gap: 3px; margin-left: 7px; padding: 2px 5px; color: var(--lime); border: 1px solid #59654d; border-radius: 3px; background: #20291f; font-size: 10px; font-weight: 700; vertical-align: 1px; white-space: nowrap; }
+
+.task-format {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 15px minmax(0, 1fr) 15px minmax(0, 1.2fr);
+  align-items: center;
+  gap: 5px;
+  margin: 20px 0 0;
+  padding: 14px 10px;
+  border: 1px solid #536b58;
+  background: #17241b;
+  text-align: center;
+}
+.task-format > div { display: grid; gap: 4px; }
+.task-format strong { color: var(--lime); font: 600 25px 'Space Grotesk', sans-serif; }
+.task-format span:not(.task-operator) { color: #c6d0c4; font-size: 8px; font-weight: 700; }
+.task-format .task-operator { color: var(--orange); font: 600 16px 'Space Grotesk', sans-serif; }
+.task-instruction { margin-top: 10px; }
+.sessions-heading { display: flex; justify-content: space-between; margin: 18px 0 10px; color: #c4d4c9; font-size: 10px; font-weight: 700; }
+.sessions-heading span { color: var(--lime); }
+
+@media (max-width: 440px) {
+  .task-format { grid-template-columns: minmax(0, 1fr) 12px minmax(0, 1fr) 12px minmax(0, 1.2fr); gap: 2px; padding: 12px 6px; }
+  .task-format strong { font-size: 22px; }
+  .task-format span:not(.task-operator) { font-size: 7px; }
+}

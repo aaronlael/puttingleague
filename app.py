@@ -138,6 +138,12 @@ def create_app(test_config=None):
             key=lambda entry: (-entry.total, -entry.score_count, entry.user.name.casefold()),
         )[:5]
         previous_draw = WeeklyDraw.query.filter_by(week_key=previous_week_key).first()
+        draw_wins = {}
+        for winner_email, in WeeklyDraw.query.with_entities(WeeklyDraw.winner_email).filter(
+            WeeklyDraw.winner_email.isnot(None)
+        ):
+            email_key = winner_email.casefold()
+            draw_wins[email_key] = draw_wins.get(email_key, 0) + 1
         player_entry = None
         if current_user.is_authenticated:
             player_entry = WeeklyEntry.query.filter_by(
@@ -153,6 +159,7 @@ def create_app(test_config=None):
             previous_week_key=previous_week_key,
             previous_standings=previous_standings,
             previous_draw=previous_draw,
+            draw_wins=draw_wins,
             participants=len(entries),
             sessions_total=sum(entry.score_count for entry in entries),
             player_entry=player_entry,

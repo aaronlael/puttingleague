@@ -10,7 +10,7 @@
   <div class="event-stat">
     <span class="stat-label">PLAYERS THIS WEEK</span>
     <strong>{{ '%02d'|format(participants) }}</strong>
-    <span class="stat-foot">{{ sessions_total }} sessions logged</span>
+    <span class="stat-foot">{{ sessions_total }} sets logged</span>
   </div>
 </section>
 
@@ -20,50 +20,57 @@
       <div><p class="eyebrow">THE FIELD</p><h2>Leaderboard</h2></div>
       <span class="ranking-note">MOST MADE PUTTS WINS</span>
     </div>
-    <div class="table-head"><span>PLACE / PLAYER</span><span>SESSIONS</span><span>MADE</span></div>
+    <div class="table-head"><span>PLACE / PLAYER</span><span>SETS</span><span>MADE</span></div>
     {% if standings %}
       <ol class="standings-list">
         {% for entry in standings %}
           <li class="standings-row {% if current_user.is_authenticated and entry.user_id == current_user.id %}is-you{% endif %}">
-            <span class="player-cell"><span class="rank-number">{{ '%02d'|format(loop.index) }}</span><span class="player-name">{{ entry.user.name }}{% if current_user.is_authenticated and entry.user_id == current_user.id %}<span class="you-tag">YOU</span>{% endif %}</span></span>
+            <span class="player-cell"><span class="rank-number">{{ '%02d'|format(loop.index) }}</span><span class="player-name">{{ entry.user.name }}{% if current_user.is_authenticated and entry.user_id == current_user.id %}<span class="you-tag">YOU</span>{% endif %}{% set win_count = draw_wins.get(entry.user.email|lower, 0) %}{% if win_count %}<span class="draw-wins" title="Weekly random draw winner {{ win_count }} {{ 'time' if win_count == 1 else 'times' }}" aria-label="Weekly random draw winner {{ win_count }} {{ 'time' if win_count == 1 else 'times' }}">👑 ×{{ win_count }}</span>{% endif %}</span></span>
             <span class="sessions-cell"><span class="round-scores">{% for score in entry.completed_scores %}<span>{{ score }}</span>{% endfor %}</span><strong class="sessions-count">{{ entry.score_count }}/5</strong></span>
             <strong class="total-score">{{ entry.total }}</strong>
           </li>
         {% endfor %}
       </ol>
     {% else %}
-      <div class="empty-state"><span class="empty-mark">01</span><p>No sessions logged yet.</p><span>Your first session puts you on the board.</span></div>
+      <div class="empty-state"><span class="empty-mark">01</span><p>No sets logged yet.</p><span>Your first set puts you on the board.</span></div>
     {% endif %}
-    <div class="standings-foot"><span>Weekly totals update after every session.</span><span>UP TO 5 SESSIONS</span></div>
+    <div class="standings-foot"><span>Weekly totals update after every set.</span><span>5 SETS / WEEK</span></div>
   </div>
 
   <aside class="score-panel">
     <div class="score-panel-top"><span class="score-kicker">THIS WEEK'S TASK</span><span class="week-chip">{{ week_key }}</span></div>
     <h2>{{ weekly_task }}</h2>
     {% if weekly_description %}<p class="score-intro">{{ weekly_description }}</p>{% endif %}
-    <p class="score-intro">Make as many as you can out of 20 putts per session. Play up to five sessions.</p>
+    <div class="task-format" aria-label="Five sets of twenty putts, one hundred putts total">
+      <div><strong>5</strong><span>SETS</span></div>
+      <span class="task-operator" aria-hidden="true">×</span>
+      <div><strong>20</strong><span>PUTTS EACH</span></div>
+      <span class="task-operator" aria-hidden="true">=</span>
+      <div><strong>100</strong><span>TOTAL PUTTS</span></div>
+    </div>
+    <p class="score-intro task-instruction">Enter how many you made in each set.</p>
     {% if current_user.is_authenticated %}
       {% set score_count = player_entry.score_count if player_entry else 0 %}
-      <h3 class="sessions-heading">YOUR SESSIONS <span>{{ score_count }} / 5</span></h3>
-      <div class="score-progress" aria-label="{{ score_count }} of 5 sessions submitted">
+      <h3 class="sessions-heading">YOUR SETS <span>{{ score_count }} / 5</span></h3>
+      <div class="score-progress" aria-label="{{ score_count }} of 5 sets submitted">
         {% for slot in range(5) %}<span class="progress-slot {% if slot < score_count %}filled{% endif %}">{% if player_entry and player_entry.scores[slot] is not none %}{{ player_entry.scores[slot] }}{% else %}<i>{{ '%02d'|format(slot + 1) }}</i>{% endif %}</span>{% endfor %}
       </div>
       {% if score_count < 5 %}
         <form class="score-form" method="post" action="{{ url_for('submit_score') }}">
           {{ form.hidden_tag() }}
-          <label for="score">SESSION {{ score_count + 1 }} / 5 - MADE PUTTS</label>
-          <div class="score-input-row">{{ form.score(id='score', min='0', max='20', placeholder='00', inputmode='numeric', required=true) }}<button type="submit" aria-label="Submit made putts">ADD <span>+</span></button></div>
+          <label for="score">SET {{ score_count + 1 }} / 5 - MADE (0-20)</label>
+          <div class="score-input-row">{{ form.score(id='score', min='0', max='20', placeholder='0-20', inputmode='numeric', required=true) }}<button type="submit" aria-label="Submit made putts">ADD <span>+</span></button></div>
           {% for error in form.score.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
         </form>
       {% else %}
-        <div class="card-complete"><span>5 / 5</span><p>Sessions complete. Your weekly total is <strong>{{ player_entry.total }} / 100</strong>.</p></div>
+        <div class="card-complete"><span>5 / 5</span><p>All sets complete. You made <strong>{{ player_entry.total }}</strong> of 100 putts.</p></div>
       {% endif %}
     {% else %}
-      <p class="score-intro">Sign in to log a session and add your made putts to the weekly total.</p>
+      <p class="score-intro">Sign in to log a set and add your made putts to the weekly total.</p>
       <a class="google-button" href="{{ url_for('google_login') }}"><span class="google-g">G</span><span>Continue with Google</span><span class="button-arrow">&#8599;</span></a>
       {% if not google_ready %}<p class="setup-note">Google sign-in needs OAuth credentials in the app environment.</p>{% endif %}
     {% endif %}
-    <div class="scoring-rule"><span class="rule-mark">!</span><p><strong>Weekly scoring</strong><br>Most made putts across your sessions tops the leaderboard.</p></div>
+    <div class="scoring-rule"><span class="rule-mark">!</span><p><strong>Weekly scoring</strong><br>Most made putts across your sets tops the leaderboard.</p></div>
   </aside>
 </section>
 
@@ -80,7 +87,7 @@
         {% if previous_standings %}
           <ol class="history-list">
             {% for entry in previous_standings %}
-              <li><span class="history-rank">{{ '%02d'|format(loop.index) }}</span><span class="history-player">{{ entry.user.name }}<small>{{ entry.score_count }} / 5 rounds</small></span><strong>{{ entry.total }}</strong></li>
+              <li><span class="history-rank">{{ '%02d'|format(loop.index) }}</span><span class="history-player">{{ entry.user.name }}{% set win_count = draw_wins.get(entry.user.email|lower, 0) %}{% if win_count %}<span class="draw-wins" title="Weekly random draw winner {{ win_count }} {{ 'time' if win_count == 1 else 'times' }}" aria-label="Weekly random draw winner {{ win_count }} {{ 'time' if win_count == 1 else 'times' }}">👑 ×{{ win_count }}</span>{% endif %}<small>{{ entry.score_count }} / 5 sets</small></span><strong>{{ entry.total }}</strong></li>
             {% endfor %}
           </ol>
         {% else %}
@@ -91,10 +98,10 @@
         <p class="eyebrow">RANDOM DRAW</p>
         {% if previous_draw and previous_draw.winner_name %}
           <h3>{{ previous_draw.winner_name }}</h3>
-          <p>{{ previous_draw.winner_total }} made putts · randomly selected from {{ previous_draw.eligible_count }} players who completed all five rounds.</p>
+          <p>{{ previous_draw.winner_total }} made putts · randomly selected from {{ previous_draw.eligible_count }} players who completed all five sets.</p>
         {% elif previous_draw %}
           <h3>No eligible winner</h3>
-          <p>No player completed all five rounds last week.</p>
+          <p>No player completed all five sets last week.</p>
         {% else %}
           <h3>No draw recorded</h3>
           <p>No completed scores were recorded last week.</p>

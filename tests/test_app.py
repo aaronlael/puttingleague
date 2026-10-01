@@ -1,7 +1,7 @@
 import os
 import tempfile
 import unittest
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
 from app import create_app, current_week, week_key_for
@@ -125,6 +125,57 @@ class WeeklyLeagueTests(unittest.TestCase):
         response = self.client.post('/scores', data={'score': 4})
         self.assertEqual(response.status_code, 302)
         self.assertIn('/?next=%2Fscores', response.headers['Location'])
+
+    def test_homepage_explains_five_sets_of_twenty_putts(self):
+        response = self.client.get('/')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'Five sets of twenty putts, one hundred putts total', response.data)
+        self.assertIn(b'PUTTS EACH', response.data)
+        self.assertIn(b'TOTAL PUTTS', response.data)
+
+    def test_draw_winner_badge_appears_on_current_and_previous_standings(self):
+        week_key, week_start = current_week()
+        previous_week_start = week_start - timedelta(days=7)
+        previous_week_key = week_key_for(previous_week_start)
+        older_week_start = previous_week_start - timedelta(days=7)
+        older_week_key = week_key_for(older_week_start)
+        with self.app.app_context():
+            db.session.add_all([
+                WeeklyEntry(
+                    user_id=self.alex_id,
+                    week_key=week_key,
+                    week_start=week_start,
+                    score_1=16,
+                ),
+                WeeklyEntry(
+                    user_id=self.alex_id,
+                    week_key=previous_week_key,
+                    week_start=previous_week_start,
+                    score_1=18,
+                ),
+                WeeklyDraw(
+                    week_key=previous_week_key,
+                    winner_name='Alex',
+                    winner_email='ALEX@example.com',
+                    winner_total=90,
+                    eligible_count=3,
+                    drawn_at=datetime.now(timezone.utc),
+                ),
+                WeeklyDraw(
+                    week_key=older_week_key,
+                    winner_name='Alex',
+                    winner_email='alex@example.com',
+                    winner_total=95,
+                    eligible_count=2,
+                    drawn_at=datetime.now(timezone.utc),
+                ),
+            ])
+            db.session.commit()
+
+        response = self.client.get('/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data.count('👑 ×2'.encode()), 2)
+        self.assertIn(b'Weekly random draw winner 2 times', response.data)
 
     def test_admin_page_is_restricted_to_allowlisted_email(self):
         self.sign_in(self.blair_id)
