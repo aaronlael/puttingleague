@@ -78,18 +78,18 @@ h2 { margin-bottom: 0; font: 600 27px 'Space Grotesk', sans-serif; letter-spacin
 .score-panel { padding: 23px 24px 0; color: var(--white); background: var(--green); }
 .score-panel-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 27px; }
 .score-kicker { color: #c4d4c9; }
-.week-chip { padding: 6px 8px; color: var(--ink); background: var(--lime); font-size: 9px; }
+.week-chip { padding: 6px 8px; color: #f4f5ef; border: 1px solid #a6bfa0; background: #31553c; font-size: 9px; }
 .score-panel h2 { font-size: 24px; }
 .score-intro { max-width: 270px; margin: 10px 0 21px; color: #d1ddd5; font-size: 12px; line-height: 1.6; }
 .score-progress { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 26px; }
 .progress-slot { min-height: 44px; display: grid; place-items: center; color: #c7d8cd; border: 1px solid #6a8a78; font: 600 15px 'Space Grotesk', sans-serif; }
 .progress-slot i { color: #9eb7a8; font-size: 9px; font-style: normal; }
-.progress-slot.filled { color: var(--ink); border-color: var(--lime); background: var(--lime); }
+.progress-slot.filled { color: #f4f5ef; border-color: #a6bfa0; background: #31553c; }
 .score-form label { display: block; margin-bottom: 8px; color: #c4d4c9; font-size: 9px; }
 .score-input-row { display: grid; grid-template-columns: 1fr auto; gap: 7px; }
 .score-input-row input { width: 100%; min-width: 0; height: 46px; padding: 0 13px; color: var(--ink); border: 0; border-radius: 0; outline-color: var(--lime); background: #fff; font: 600 17px 'Space Grotesk', sans-serif; }
 .score-input-row input::placeholder { color: #aeb5af; }
-.score-input-row button { min-width: 82px; height: 46px; padding: 0 13px; color: var(--ink); border: 0; background: var(--lime); cursor: pointer; font-size: 10px; font-weight: 700; }
+.score-input-row button { min-width: 82px; height: 46px; padding: 0 13px; color: #f4f5ef; border: 1px solid #a6bfa0; background: #31553c; cursor: pointer; font-size: 10px; font-weight: 700; }
 .score-input-row button span { margin-left: 8px; font-size: 18px; vertical-align: -1px; }
 .field-error { margin: 7px 0 0; color: #ffe2d8; font-size: 11px; }
 .google-button { min-height: 47px; display: flex; align-items: center; gap: 11px; padding: 0 12px; color: var(--ink); background: var(--white); font-size: 12px; font-weight: 700; }
@@ -220,11 +220,12 @@ h2 { font-size: 28px; }
 .is-you { background: rgba(166, 191, 160, .1); }
 .score-panel { color: var(--ink); border: 1px solid #3b5041; border-radius: 6px; background: #1b2a21; box-shadow: 0 18px 45px rgba(0, 0, 0, .18); }
 .score-kicker { color: #b8c6b5; }
-.week-chip { color: #26271d; border-radius: 2px; background: var(--lime); }
+.week-chip { color: #f4f5ef; border-color: #a6bfa0; border-radius: 2px; background: #31553c; }
 .score-intro, .card-complete p { color: #c6d0c4; }
 .progress-slot, .card-complete { border-color: #536b58; border-radius: 3px; }
 .score-input-row input { color: var(--ink); border: 1px solid #526255; border-radius: 3px; background: #111a15; }
-.score-input-row button { color: #26271d; border-radius: 3px; background: var(--lime); }
+.score-input-row button { color: #f4f5ef; border-color: #a6bfa0; border-radius: 3px; background: #31553c; }
+.score-input-row button:hover { background: #3b6848; }
 .google-button { color: var(--ink); border: 1px solid #536255; border-radius: 3px; background: #28362c; transition: background-color .18s ease, border-color .18s ease; }
 .google-button:hover { border-color: var(--lime); background: #304034; }
 .scoring-rule { color: #c6d0c4; border-radius: 0 0 5px 5px; background: #17241b; }
