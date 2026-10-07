@@ -145,10 +145,19 @@ def create_app(test_config=None):
             email_key = winner_email.casefold()
             draw_wins[email_key] = draw_wins.get(email_key, 0) + 1
         player_entry = None
+        player_rank = None
         if current_user.is_authenticated:
             player_entry = WeeklyEntry.query.filter_by(
                 week_key=week_key, user_id=current_user.id
             ).first()
+            player_rank = next(
+                (
+                    rank
+                    for rank, entry in enumerate(standings, start=1)
+                    if entry.user_id == current_user.id
+                ),
+                None,
+            )
         form = ScoreForm()
         return render_template(
             'pages/placeholder.home.html',
@@ -163,6 +172,7 @@ def create_app(test_config=None):
             participants=len(entries),
             sessions_total=sum(entry.score_count for entry in entries),
             player_entry=player_entry,
+            player_rank=player_rank,
             form=form,
             weekly_task=(
                 scheduled_challenge.challenge.title
@@ -238,7 +248,11 @@ def create_app(test_config=None):
                 'user': user,
                 'sessions': sum(entry.score_count for entry in user.entries),
                 'made': sum(entry.total for entry in user.entries),
-                'history': sorted(user.entries, key=lambda entry: entry.week_key, reverse=True),
+                'history': sorted(
+                    user.entries,
+                    key=lambda entry: entry.week_key,
+                    reverse=True,
+                )[:1],
             }
             for user in users
         ]

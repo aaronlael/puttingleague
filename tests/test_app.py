@@ -133,6 +133,74 @@ class WeeklyLeagueTests(unittest.TestCase):
         self.assertIn(b'PUTTS EACH', response.data)
         self.assertIn(b'TOTAL PUTTS', response.data)
 
+    def test_active_leaderboard_renders_all_current_week_players(self):
+        week_key, week_start = current_week()
+        with self.app.app_context():
+            users = [
+                User(
+                    google_id=f'google-player-{index}',
+                    email=f'player-{index}@example.com',
+                    name=f'Player {index}',
+                )
+                for index in range(8)
+            ]
+            db.session.add_all(users)
+            db.session.flush()
+            db.session.add_all([
+                WeeklyEntry(
+                    user_id=user.id,
+                    week_key=week_key,
+                    week_start=week_start,
+                    score_1=index,
+                )
+                for index, user in enumerate(users, start=1)
+            ])
+            db.session.commit()
+
+        response = self.client.get('/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data.count(b'class="standings-row'), 8)
+
+    def test_signed_in_player_sees_rank_from_leaderboard_order(self):
+        week_key, week_start = current_week()
+        with self.app.app_context():
+            db.session.add_all([
+                WeeklyEntry(
+                    user_id=self.alex_id,
+                    week_key=week_key,
+                    week_start=week_start,
+                    score_1=15,
+                ),
+                WeeklyEntry(
+                    user_id=self.blair_id,
+                    week_key=week_key,
+                    week_start=week_start,
+                    score_1=18,
+                ),
+            ])
+            db.session.commit()
+
+        self.sign_in(self.alex_id)
+        response = self.client.get('/')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'YOUR RANK', response.data)
+        self.assertIn(b'#2', response.data)
+        self.assertIn(b'OF 2', response.data)
+
+    def test_player_without_current_week_entry_sees_unranked_state(self):
+        self.sign_in(self.alex_id)
+        response = self.client.get('/')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'YOUR RANK', response.data)
+        self.assertIn(b'LOG A SET', response.data)
+
+    def test_logged_out_visitor_sees_sign_in_rank_state(self):
+        response = self.client.get('/')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'YOUR RANK', response.data)
+        self.assertIn(b'SIGN IN', response.data)
+        self.assertIn(b'<strong>--</strong>', response.data)
+
     def test_draw_winner_badge_appears_on_current_and_previous_standings(self):
         week_key, week_start = current_week()
         previous_week_start = week_start - timedelta(days=7)
@@ -186,6 +254,33 @@ class WeeklyLeagueTests(unittest.TestCase):
         response = self.client.get('/admin')
         self.assertEqual(response.status_code, 200)
         self.assertIn(b'Administration', response.data)
+
+    def test_admin_player_history_shows_only_most_recent_week(self):
+        current_key, current_start = current_week()
+        previous_start = current_start - timedelta(days=7)
+        previous_key = week_key_for(previous_start)
+        with self.app.app_context():
+            db.session.add_all([
+                WeeklyEntry(
+                    user_id=self.blair_id,
+                    week_key=current_key,
+                    week_start=current_start,
+                    score_1=12,
+                ),
+                WeeklyEntry(
+                    user_id=self.blair_id,
+                    week_key=previous_key,
+                    week_start=previous_start,
+                    score_1=7,
+                ),
+            ])
+            db.session.commit()
+
+        self.sign_in(self.admin_id)
+        response = self.client.get('/admin')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(f'<small>{current_key}: 12</small>'.encode(), response.data)
+        self.assertNotIn(f'<small>{previous_key}: 7</small>'.encode(), response.data)
 
     def test_admin_can_add_challenge_and_assign_it_to_a_week(self):
         self.sign_in(self.admin_id)

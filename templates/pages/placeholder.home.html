@@ -18,7 +18,11 @@
   <div class="standings-panel">
     <div class="section-heading">
       <div><p class="eyebrow">THE FIELD</p><h2>Leaderboard</h2></div>
-      <span class="ranking-note">MOST MADE PUTTS WINS</span>
+      <div class="rank-indicator" aria-label="Your rank this week">
+        <span class="rank-indicator-label">YOUR RANK</span>
+        <strong>{% if player_rank %}#{{ player_rank }}{% else %}--{% endif %}</strong>
+        <span class="rank-indicator-context">{% if player_rank %}OF {{ participants }}{% elif current_user.is_authenticated %}LOG A SET{% else %}SIGN IN{% endif %}</span>
+      </div>
     </div>
     <div class="table-head"><span>PLACE / PLAYER</span><span>SETS</span><span>MADE</span></div>
     {% if standings %}

@@ -47,7 +47,10 @@ h1 span { color: var(--green); }
 .section-heading { display: flex; align-items: end; justify-content: space-between; margin-bottom: 23px; }
 .section-heading .eyebrow { margin-bottom: 7px; color: var(--orange); }
 h2 { margin-bottom: 0; font: 600 27px 'Space Grotesk', sans-serif; letter-spacing: 0; }
-.ranking-note { padding: 7px 9px; color: var(--green); background: #e5ecdf; font-size: 9px; }
+.rank-indicator { min-width: 84px; display: grid; grid-template-columns: auto auto; align-items: center; justify-content: end; column-gap: 8px; padding: 5px 9px; border: 1px solid #59654d; border-radius: 3px; background: #20291f; text-align: right; }
+.rank-indicator-label { grid-column: 1; color: #a0aaa0; font-size: 8px; font-weight: 700; }
+.rank-indicator strong { grid-column: 2; grid-row: 1 / span 2; color: var(--lime); font: 600 18px 'Space Grotesk', sans-serif; }
+.rank-indicator-context { grid-column: 1; color: var(--muted); font-size: 8px; font-weight: 700; }
 .table-head { display: grid; grid-template-columns: minmax(0, 1fr) 190px 65px; padding: 0 14px 11px; color: #8a938c; font-size: 9px; }
 .table-head span:nth-child(2) { text-align: center; }
 .table-head span:last-child { text-align: right; }
