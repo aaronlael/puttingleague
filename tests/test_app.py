@@ -10,6 +10,12 @@ from models import Challenge, User, WeeklyChallenge, WeeklyDraw, WeeklyEntry, db
 
 
 class DatabaseConfigurationTests(unittest.TestCase):
+    def test_authentication_cookies_are_secure_by_default(self):
+        from config import REMEMBER_COOKIE_SECURE, SESSION_COOKIE_SECURE
+
+        self.assertTrue(SESSION_COOKIE_SECURE)
+        self.assertTrue(REMEMBER_COOKIE_SECURE)
+
     def test_database_pool_checks_connections_before_use(self):
         self.assertTrue(SQLALCHEMY_ENGINE_OPTIONS['pool_pre_ping'])
 
@@ -49,6 +55,8 @@ class WeeklyLeagueTests(unittest.TestCase):
             'WTF_CSRF_ENABLED': False,
             'SQLALCHEMY_DATABASE_URI': f'sqlite:///{self.database_file.name}',
             'SECRET_KEY': 'test-secret',
+            'SESSION_COOKIE_SECURE': False,
+            'REMEMBER_COOKIE_SECURE': False,
             'ADMIN_EMAIL': 'AARON.J.LAEL@GMAIL.COM',
         })
         self.client = self.app.test_client()

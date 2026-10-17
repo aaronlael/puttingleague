@@ -15,6 +15,11 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 REMEMBER_COOKIE_DURATION = timedelta(days=30)
 REMEMBER_COOKIE_HTTPONLY = True
 REMEMBER_COOKIE_SAMESITE = 'Lax'
+cookie_secure = os.environ.get('COOKIE_SECURE', 'true').strip().casefold()
+if cookie_secure not in {'true', 'false'}:
+	raise RuntimeError('COOKIE_SECURE must be set to "true" or "false".')
+SESSION_COOKIE_SECURE = cookie_secure == 'true'
+REMEMBER_COOKIE_SECURE = SESSION_COOKIE_SECURE
 GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
 ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'aaron.j.lael@gmail.com')

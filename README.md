@@ -12,7 +12,7 @@ On the sign-in panel, players can select **Keep me logged in for 30 days**. This
 2. Install dependencies with `pip install -r requirements.txt`.
 3. Create a Google OAuth 2.0 Web application client. Add `http://localhost:5000/auth/callback` as an authorized redirect URI.
 4. Set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and a private `SECRET_KEY` environment variable.
-5. Start the app with `python app.py` and visit `http://localhost:5000`.
+5. For local HTTP development, set `COOKIE_SECURE=false` in the environment (`$env:COOKIE_SECURE = 'false'` in PowerShell or `export COOKIE_SECURE=false` in Bash), then start the app with `python app.py` and visit `http://localhost:5000`. The default is `true`; keep it enabled for deployments served over HTTPS.
 
 The SQLite database is created as `database.db` on first run. Back it up regularly, use HTTPS for public deployment, and consider an external database if usage or recovery requirements grow. Set `ADMIN_EMAIL` in the deployment environment to `aaron.j.lael@gmail.com` to grant that Google account access to `/admin` (this is the default). The admin page lets you create challenges, assign them to ISO weeks, review weekly score histories, and permanently remove player accounts and their scores. New challenge, schedule, and weekly-draw tables are created automatically; existing database tables are unchanged.
 
