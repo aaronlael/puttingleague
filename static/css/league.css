@@ -267,3 +267,40 @@ h2 { font-size: 28px; }
   .task-format strong { font-size: 22px; }
   .task-format span:not(.task-operator) { font-size: 7px; }
 }
+
+.putt-tracker[hidden],
+.manual-score-entry[hidden] { display: none; }
+.putt-tracker { margin-top: 14px; padding: 15px; border: 1px solid #536b58; border-radius: 4px; background: #17241b; }
+.tracker-counts { display: grid; grid-template-columns: 1fr 1fr auto; align-items: end; gap: 10px; }
+.tracker-counts > div { display: grid; gap: 2px; }
+.tracker-counts strong { color: var(--lime); font: 600 28px/1 'Space Grotesk', sans-serif; }
+.tracker-counts > div:nth-child(2) strong { color: var(--ink); }
+.tracker-counts > div span { color: #aeb9ad; font-size: 8px; font-weight: 700; letter-spacing: .08em; }
+.tracker-attempts { padding-bottom: 2px; color: #c6d0c4; font: 600 11px 'Space Grotesk', sans-serif; }
+.tracker-progress { height: 7px; overflow: hidden; margin: 14px 0 16px; border-radius: 6px; background: #344238; }
+.tracker-progress span { display: block; width: 0; height: 100%; border-radius: inherit; background: var(--lime); transition: width .18s ease; }
+.tracker-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tracker-button { min-height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; border: 1px solid; border-radius: 4px; cursor: pointer; font: 700 13px 'Space Grotesk', sans-serif; letter-spacing: .04em; touch-action: manipulation; }
+.tracker-button span { font-size: 23px; font-weight: 500; }
+.tracker-make { color: #f2f5e8; border-color: #718b5d; background: #354c32; }
+.tracker-make:hover:not(:disabled) { background: #405d3b; }
+.tracker-miss { color: #f2ddd4; border-color: #875c4b; background: #442f29; }
+.tracker-miss:hover:not(:disabled) { background: #563a32; }
+.tracker-button:disabled { opacity: .45; cursor: not-allowed; }
+.tracker-footer { min-height: 35px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.tracker-undo { padding: 8px 0; color: var(--lime); border: 0; background: none; cursor: pointer; font-size: 9px; font-weight: 700; touch-action: manipulation; }
+.tracker-undo:disabled { color: #78847a; cursor: not-allowed; }
+.tracker-footer [data-tracker-status] { color: #aeb9ad; font-size: 9px; text-align: right; }
+.tracker-submit { width: 100%; min-height: 48px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; color: #f4f5ef; border: 1px solid #a6bfa0; border-radius: 3px; background: #31553c; cursor: pointer; font-size: 10px; font-weight: 700; }
+.tracker-submit span { font-size: 17px; }
+.tracker-submit:disabled { opacity: .48; cursor: not-allowed; }
+.tracker-submit:not(:disabled):hover { background: #3b6848; }
+
+@media (min-width: 441px) {
+  .putt-tracker { padding: 18px; }
+  .tracker-button { min-height: 68px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tracker-progress span { transition: none; }
+}

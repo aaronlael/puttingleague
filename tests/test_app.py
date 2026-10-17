@@ -133,6 +133,20 @@ class WeeklyLeagueTests(unittest.TestCase):
         self.assertIn(b'PUTTS EACH', response.data)
         self.assertIn(b'TOTAL PUTTS', response.data)
 
+    def test_signed_in_player_sees_putt_tracker_and_manual_score_fallback(self):
+        self.sign_in(self.alex_id)
+        response = self.client.get('/')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'data-putt-tracker', response.data)
+        self.assertIn(b'data-putt-result="make"', response.data)
+        self.assertIn(b'data-putt-result="miss"', response.data)
+        self.assertIn(b'data-putt-undo', response.data)
+        self.assertIn(b'class="score-input-row manual-score-entry"', response.data)
+
+        with self.client.get('/static/js/putt-tracker.js') as script_response:
+            self.assertEqual(script_response.status_code, 200)
+            self.assertIn(b'data-tracker-submit', script_response.data)
+
     def test_active_leaderboard_renders_all_current_week_players(self):
         week_key, week_start = current_week()
         with self.app.app_context():

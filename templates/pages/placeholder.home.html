@@ -62,9 +62,28 @@
       {% if score_count < 5 %}
         <form class="score-form" method="post" action="{{ url_for('submit_score') }}">
           {{ form.hidden_tag() }}
-          <label for="score">SET {{ score_count + 1 }} / 5 - MADE (0-20)</label>
-          <div class="score-input-row">{{ form.score(id='score', min='0', max='20', placeholder='0-20', inputmode='numeric', required=true) }}<button type="submit" aria-label="Submit made putts">ADD <span>+</span></button></div>
+          <label for="score"><span data-manual-label>SET {{ score_count + 1 }} / 5 - MADE (0-20)</span><span data-tracker-label hidden>SET {{ score_count + 1 }} / 5 - TRACK EACH PUTT</span></label>
+          <div class="score-input-row manual-score-entry">{{ form.score(id='score', min='0', max='20', placeholder='0-20', inputmode='numeric', required=true) }}<button type="submit" aria-label="Submit made putts">ADD <span>+</span></button></div>
           {% for error in form.score.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+          <div class="putt-tracker" data-putt-tracker hidden>
+            <div class="tracker-counts">
+              <div><strong data-putts-made>0</strong><span>MADE</span></div>
+              <div><strong data-putts-remaining>20</strong><span>LEFT</span></div>
+              <span class="tracker-attempts" data-putts-total>0 / 20 putts</span>
+            </div>
+            <div class="tracker-progress" role="progressbar" aria-label="Putts recorded" aria-valuemin="0" aria-valuemax="20" aria-valuenow="0">
+              <span data-tracker-progress></span>
+            </div>
+            <div class="tracker-actions">
+              <button class="tracker-button tracker-make" type="button" data-putt-result="make">MAKE <span>+</span></button>
+              <button class="tracker-button tracker-miss" type="button" data-putt-result="miss">MISS <span>&minus;</span></button>
+            </div>
+            <div class="tracker-footer">
+              <button class="tracker-undo" type="button" data-putt-undo disabled>UNDO LAST</button>
+              <span data-tracker-status aria-live="polite">Tap a result for each putt.</span>
+            </div>
+            <button class="tracker-submit" type="submit" data-tracker-submit disabled>LOG SET <span>&#8594;</span></button>
+          </div>
         </form>
       {% else %}
         <div class="card-complete"><span>5 / 5</span><p>All sets complete. You made <strong>{{ player_entry.total }}</strong> of 100 putts.</p></div>
