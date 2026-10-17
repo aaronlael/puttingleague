@@ -90,7 +90,10 @@
       {% endif %}
     {% else %}
       <p class="score-intro">Sign in to log a set and add your made putts to the weekly total.</p>
-      <a class="google-button" href="{{ url_for('google_login') }}"><span class="google-g">G</span><span>Continue with Google</span><span class="button-arrow">&#8599;</span></a>
+      <form class="google-login-form" action="{{ url_for('google_login') }}" method="get">
+        <button class="google-button" type="submit"><span class="google-g">G</span><span>Continue with Google</span><span class="button-arrow">&#8599;</span></button>
+        <label class="remember-option"><input type="checkbox" name="remember" value="1"><span>Keep me logged in for 30 days</span></label>
+      </form>
       {% if not google_ready %}<p class="setup-note">Google sign-in needs OAuth credentials in the app environment.</p>{% endif %}
     {% endif %}
     <div class="scoring-rule"><span class="rule-mark">!</span><p><strong>Weekly scoring</strong><br>Most made putts across your sets tops the leaderboard.</p></div>

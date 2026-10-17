@@ -46,6 +46,16 @@ class WSGIMountTests(unittest.TestCase):
             and 'SameSite=Lax' in cookie
             for cookie in cookies
         ))
+        self.assertEqual(
+            putting_league_app.config['REMEMBER_COOKIE_NAME'],
+            'putting_league_remember',
+        )
+        self.assertEqual(
+            putting_league_app.config['REMEMBER_COOKIE_PATH'],
+            '/puttingleague',
+        )
+        self.assertTrue(putting_league_app.config['REMEMBER_COOKIE_SECURE'])
+        self.assertEqual(putting_league_app.config['REMEMBER_COOKIE_SAMESITE'], 'Lax')
 
 
 if __name__ == '__main__':

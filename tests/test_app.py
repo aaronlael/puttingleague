@@ -4,7 +4,7 @@ import unittest
 from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
-from app import create_app, current_week, week_key_for
+from app import create_app, current_week, oauth, week_key_for
 from config import SQLALCHEMY_ENGINE_OPTIONS, database_uri_from_environment
 from models import Challenge, User, WeeklyChallenge, WeeklyDraw, WeeklyEntry, db
 
@@ -132,6 +132,81 @@ class WeeklyLeagueTests(unittest.TestCase):
         self.assertIn(b'Five sets of twenty putts, one hundred putts total', response.data)
         self.assertIn(b'PUTTS EACH', response.data)
         self.assertIn(b'TOTAL PUTTS', response.data)
+
+    def test_homepage_offers_thirty_day_remember_option(self):
+        response = self.client.get('/')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'name="remember" value="1"', response.data)
+        self.assertIn(b'Keep me logged in for 30 days', response.data)
+
+    def test_google_callback_issues_persistent_cookie_when_requested(self):
+        with self.client.session_transaction() as session:
+            session['remember_login'] = True
+
+        with self.app.app_context():
+            google = oauth.google
+        with patch.object(
+            google,
+            'authorize_access_token',
+            return_value={'userinfo': {
+                'sub': 'google-remembered',
+                'email': 'remembered@example.com',
+                'name': 'Remembered Player',
+            }},
+        ):
+            response = self.client.get('/auth/callback')
+
+        self.assertEqual(response.status_code, 302)
+        remember_cookie = next(
+            cookie for cookie in response.headers.getlist('Set-Cookie')
+            if cookie.startswith('remember_token=')
+        )
+        self.assertIn('Expires=', remember_cookie)
+        self.assertIn('HttpOnly', remember_cookie)
+        self.assertEqual(self.app.config['REMEMBER_COOKIE_DURATION'], timedelta(days=30))
+
+    def test_google_callback_does_not_issue_persistent_cookie_by_default(self):
+        with self.app.app_context():
+            google = oauth.google
+        with patch.object(
+            google,
+            'authorize_access_token',
+            return_value={'userinfo': {
+                'sub': 'google-session-only',
+                'email': 'session-only@example.com',
+                'name': 'Session Only Player',
+            }},
+        ):
+            response = self.client.get('/auth/callback')
+
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(any(
+            cookie.startswith('remember_token=')
+            for cookie in response.headers.getlist('Set-Cookie')
+        ))
+
+    def test_google_sign_in_preserves_remember_checkbox_selection(self):
+        self.app.config.update(
+            GOOGLE_CLIENT_ID='test-client',
+            GOOGLE_CLIENT_SECRET='test-secret',
+        )
+        with self.app.app_context():
+            google = oauth.google
+        with patch.object(
+            google,
+            'authorize_redirect',
+            return_value=self.app.response_class(status=302),
+        ):
+            response = self.client.get('/auth/google?remember=1')
+
+        self.assertEqual(response.status_code, 302)
+        with self.client.session_transaction() as session:
+            self.assertTrue(session['remember_login'])
+
+        response = self.client.get('/auth/google')
+        self.assertEqual(response.status_code, 302)
+        with self.client.session_transaction() as session:
+            self.assertFalse(session['remember_login'])
 
     def test_signed_in_player_sees_putt_tracker_and_manual_score_fallback(self):
         self.sign_in(self.alex_id)

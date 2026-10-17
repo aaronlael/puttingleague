@@ -8,7 +8,7 @@ import re
 import secrets
 
 from authlib.integrations.flask_client import OAuth
-from flask import Flask, abort, flash, redirect, render_template, request, url_for
+from flask import Flask, abort, flash, redirect, render_template, request, session, url_for
 from flask_login import LoginManager, current_user, login_required, login_user, logout_user
 from flask_wtf import CSRFProtect, FlaskForm
 from sqlalchemy.exc import IntegrityError
@@ -273,6 +273,7 @@ def create_app(test_config=None):
         if not app.config.get('GOOGLE_CLIENT_ID') or not app.config.get('GOOGLE_CLIENT_SECRET'):
             flash('Google sign-in needs GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET configured.')
             return redirect(url_for('home'))
+        session['remember_login'] = request.args.get('remember') == '1'
         redirect_uri = url_for('google_callback', _external=True)
         return oauth.google.authorize_redirect(redirect_uri)
 
@@ -295,7 +296,7 @@ def create_app(test_config=None):
             user.email = profile['email']
             user.name = profile.get('name') or user.name
         db.session.commit()
-        login_user(user)
+        login_user(user, remember=session.pop('remember_login', False))
         return redirect(url_for('home'))
 
     @app.post('/scores')

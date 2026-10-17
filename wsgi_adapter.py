@@ -6,6 +6,10 @@ def create_application(bcss_app, putting_league_app):
     putting_league_app.config['SESSION_COOKIE_PATH'] = '/puttingleague'
     putting_league_app.config['SESSION_COOKIE_SECURE'] = True
     putting_league_app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    putting_league_app.config['REMEMBER_COOKIE_NAME'] = 'putting_league_remember'
+    putting_league_app.config['REMEMBER_COOKIE_PATH'] = '/puttingleague'
+    putting_league_app.config['REMEMBER_COOKIE_SECURE'] = True
+    putting_league_app.config['REMEMBER_COOKIE_SAMESITE'] = 'Lax'
     return DispatcherMiddleware(
         bcss_app,
         {'/puttingleague': putting_league_app},

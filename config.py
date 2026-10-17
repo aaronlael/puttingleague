@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 
 from sqlalchemy.engine import URL
 
@@ -11,6 +12,9 @@ DEBUG = False
 # Secret key for session management. You can generate random strings here:
 # https://randomkeygen.com/
 SECRET_KEY = os.environ.get('SECRET_KEY')
+REMEMBER_COOKIE_DURATION = timedelta(days=30)
+REMEMBER_COOKIE_HTTPONLY = True
+REMEMBER_COOKIE_SAMESITE = 'Lax'
 GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
 ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'aaron.j.lael@gmail.com')
