@@ -126,12 +126,17 @@ h2 { margin-bottom: 0; font: 600 27px 'Space Grotesk', sans-serif; letter-spacin
 .admin-form input, .admin-form textarea, .admin-form select { width: 100%; min-width: 0; padding: 10px 11px; color: var(--ink); border: 1px solid var(--line); border-radius: 0; background: var(--forest); font-size: 13px; }
 .admin-form textarea { min-height: 75px; resize: vertical; }
 .admin-form button, .danger-button { justify-self: start; min-height: 39px; padding: 0 14px; color: var(--forest); border: 0; background: var(--sage); cursor: pointer; font-size: 11px; font-weight: 700; }
+.admin-action-button { min-height: 32px; padding: 0 10px; color: var(--forest); border: 0; border-radius: 3px; background: var(--sage); cursor: pointer; font-size: 10px; font-weight: 700; }
+.admin-action-button:hover { background: #b8cdb3; }
 .admin-table-wrap { overflow-x: auto; margin-top: 16px; }
 .admin-table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .admin-table th, .admin-table td { padding: 12px 9px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle; }
 .admin-table th { color: var(--muted); font-size: 9px; }
 .admin-table td small { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; }
 .admin-table .numeric { text-align: right; font-variant-numeric: tabular-nums; }
+.payout-status { display: inline-block; padding: 4px 7px; border: 1px solid; border-radius: 3px; font-size: 9px; font-weight: 700; letter-spacing: .06em; }
+.payout-paid { color: #b7d2ac; border-color: #5a785b; }
+.payout-unpaid { color: #e5bb8d; border-color: #866547; }
 .danger-button { min-height: 32px; color: #8e2f22; border: 1px solid #e6b9ae; background: #fff; }
 .admin-empty { padding: 20px 0; color: var(--muted); font-size: 12px; }
 .admin-warning { color: #8e2f22 !important; }
@@ -240,6 +245,8 @@ h2 { font-size: 28px; }
 .site-footer span:first-child { color: var(--sand); }
 .admin-form input, .admin-form textarea, .admin-form select { border-radius: 3px; background: #141d17; }
 .admin-form button { color: #172019; border-radius: 3px; background: var(--sand); }
+.admin-action-button { color: #172019; background: var(--sand); }
+.admin-action-button:hover { background: #e2d5a8; }
 .danger-button { color: #ffd4c6; border: 1px solid #9d604d; border-radius: 3px; background: #34231e; }
 .admin-warning { color: #ffb39d !important; }
 .history-details > summary::after { color: var(--sand); }

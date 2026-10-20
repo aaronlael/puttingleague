@@ -11,11 +11,20 @@ from authlib.integrations.flask_client import OAuth
 from flask import Flask, abort, flash, redirect, render_template, request, session, url_for
 from flask_login import LoginManager, current_user, login_required, login_user, logout_user
 from flask_wtf import CSRFProtect, FlaskForm
+from sqlalchemy import update
 from sqlalchemy.exc import IntegrityError
 from wtforms import IntegerField
 from wtforms.validators import InputRequired, NumberRange
 
-from models import Challenge, User, WeeklyChallenge, WeeklyDraw, WeeklyEntry, db
+from models import (
+    Challenge,
+    User,
+    WeeklyChallenge,
+    WeeklyDraw,
+    WeeklyDrawPayout,
+    WeeklyEntry,
+    db,
+)
 
 login_manager = LoginManager()
 login_manager.login_view = 'home'
@@ -59,6 +68,36 @@ def competition_ranks(standings):
     return rank_by_user, tied_user_ids
 
 
+def ensure_weekly_draw_payouts():
+    missing_draw_ids = [
+        draw_id
+        for (draw_id,) in db.session.query(WeeklyDraw.id)
+        .outerjoin(WeeklyDrawPayout, WeeklyDrawPayout.draw_id == WeeklyDraw.id)
+        .filter(WeeklyDrawPayout.id.is_(None))
+        .all()
+    ]
+    while missing_draw_ids:
+        db.session.add_all(
+            WeeklyDrawPayout(draw_id=draw_id) for draw_id in missing_draw_ids
+        )
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            remaining_draw_ids = {
+                draw_id
+                for (draw_id,) in db.session.query(WeeklyDraw.id)
+                .outerjoin(WeeklyDrawPayout, WeeklyDrawPayout.draw_id == WeeklyDraw.id)
+                .filter(WeeklyDrawPayout.id.is_(None))
+                .all()
+            }
+            if remaining_draw_ids == set(missing_draw_ids):
+                raise
+            missing_draw_ids = list(remaining_draw_ids)
+        else:
+            missing_draw_ids = []
+
+
 def parse_week_key(value):
     if not re.fullmatch(r'\d{4}-W\d{2}', value or ''):
         return None
@@ -96,6 +135,7 @@ def finalize_completed_weeks(current_week_key):
             winner_total=winner.total if winner else None,
             eligible_count=len(eligible_entries),
             drawn_at=datetime.now(timezone.utc),
+            payout=WeeklyDrawPayout(),
         )
         db.session.add(result)
         try:
@@ -126,6 +166,7 @@ def create_app(test_config=None):
 
     with app.app_context():
         db.create_all()
+        ensure_weekly_draw_payouts()
 
     def is_admin(user):
         allowed_email = app.config.get('ADMIN_EMAIL', '').strip().casefold()
@@ -215,6 +256,8 @@ def create_app(test_config=None):
         if not is_admin(current_user):
             abort(403)
 
+        ensure_weekly_draw_payouts()
+
         if request.method == 'POST':
             action = request.form.get('action')
             if action == 'add_challenge':
@@ -261,6 +304,32 @@ def create_app(test_config=None):
                     flash(f'Account {user.email} and its scores were permanently deleted.')
                 return redirect(url_for('admin'))
 
+            if action == 'mark_draw_paid':
+                draw = db.session.get(WeeklyDraw, request.form.get('draw_id', type=int))
+                if draw is None:
+                    flash('That weekly draw no longer exists.')
+                elif not draw.winner_email:
+                    flash('There is no winner to mark as paid for that draw.')
+                else:
+                    result = db.session.execute(
+                        update(WeeklyDrawPayout)
+                        .where(
+                            WeeklyDrawPayout.draw_id == draw.id,
+                            WeeklyDrawPayout.paid_at.is_(None),
+                        )
+                        .values(
+                            paid_at=datetime.now(timezone.utc),
+                            paid_by_email=current_user.email,
+                        )
+                    )
+                    if result.rowcount:
+                        db.session.commit()
+                        flash(f'{draw.winner_name} is marked as paid.')
+                    else:
+                        db.session.rollback()
+                        flash('That draw winner is already marked as paid.')
+                return redirect(url_for('admin'))
+
             abort(400)
 
         users = User.query.order_by(User.name, User.email).all()
@@ -280,12 +349,19 @@ def create_app(test_config=None):
         challenges = Challenge.query.order_by(Challenge.title).all()
         assignments = WeeklyChallenge.query.order_by(WeeklyChallenge.week_key.desc()).all()
         weekly_draws = WeeklyDraw.query.order_by(WeeklyDraw.week_key.desc()).limit(12).all()
+        payouts_by_draw_id = {
+            payout.draw_id: payout
+            for payout in WeeklyDrawPayout.query.filter(
+                WeeklyDrawPayout.draw_id.in_([draw.id for draw in weekly_draws])
+            ).all()
+        } if weekly_draws else {}
         return render_template(
             'pages/admin.html',
             users=user_summaries,
             challenges=challenges,
             assignments=assignments,
             weekly_draws=weekly_draws,
+            payouts_by_draw_id=payouts_by_draw_id,
             current_week_key=current_week()[0],
         )
 

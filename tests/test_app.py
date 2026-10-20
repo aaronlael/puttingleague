@@ -6,7 +6,15 @@ from unittest.mock import patch
 
 from app import create_app, current_week, oauth, week_key_for
 from config import SQLALCHEMY_ENGINE_OPTIONS, database_uri_from_environment
-from models import Challenge, User, WeeklyChallenge, WeeklyDraw, WeeklyEntry, db
+from models import (
+    Challenge,
+    User,
+    WeeklyChallenge,
+    WeeklyDraw,
+    WeeklyDrawPayout,
+    WeeklyEntry,
+    db,
+)
 
 
 class DatabaseConfigurationTests(unittest.TestCase):
@@ -388,6 +396,182 @@ class WeeklyLeagueTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b'Administration', response.data)
 
+    def test_admin_can_mark_draw_winner_paid_idempotently(self):
+        with self.app.app_context():
+            draw = WeeklyDraw(
+                week_key='2026-W01',
+                winner_name='Alex',
+                winner_email='alex@example.com',
+                winner_total=80,
+                eligible_count=2,
+                drawn_at=datetime.now(timezone.utc),
+            )
+            db.session.add(draw)
+            db.session.commit()
+            draw_id = draw.id
+
+        self.sign_in(self.admin_id)
+        data = {'action': 'mark_draw_paid', 'draw_id': draw_id}
+        response = self.client.post('/admin', data=data, follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'Alex is marked as paid.', response.data)
+        self.assertIn(b'payout-paid">PAID', response.data)
+        self.assertIn(b'by aaron.j.lael@gmail.com', response.data)
+        self.assertNotIn(b'value="mark_draw_paid"', response.data)
+
+        with self.app.app_context():
+            payout = WeeklyDrawPayout.query.filter_by(draw_id=draw_id).one()
+            paid_at = payout.paid_at
+            self.assertEqual(payout.paid_by_email, 'aaron.j.lael@gmail.com')
+
+        response = self.client.post('/admin', data=data, follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'already marked as paid', response.data)
+        with self.app.app_context():
+            self.assertEqual(WeeklyDrawPayout.query.filter_by(draw_id=draw_id).count(), 1)
+            self.assertEqual(
+                WeeklyDrawPayout.query.filter_by(draw_id=draw_id).one().paid_at,
+                paid_at,
+            )
+
+    def test_admin_backfills_existing_draws_as_unpaid(self):
+        with self.app.app_context():
+            db.session.add_all([
+                WeeklyDraw(
+                    week_key='2026-W01',
+                    winner_name='Alex',
+                    winner_email='alex@example.com',
+                    winner_total=80,
+                    eligible_count=2,
+                    drawn_at=datetime.now(timezone.utc),
+                ),
+                WeeklyDraw(
+                    week_key='2026-W02',
+                    winner_name=None,
+                    winner_email=None,
+                    winner_total=None,
+                    eligible_count=0,
+                    drawn_at=datetime.now(timezone.utc),
+                ),
+            ])
+            db.session.commit()
+
+        self.sign_in(self.admin_id)
+        response = self.client.get('/admin')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data.count(b'payout-unpaid">UNPAID'), 1)
+        self.assertIn(b'class="admin-action-button" type="submit">Mark paid', response.data)
+        self.assertIn(b'value="mark_draw_paid"', response.data)
+        self.assertIn(b'No eligible winner', response.data)
+
+        with self.app.app_context():
+            draws = WeeklyDraw.query.order_by(WeeklyDraw.week_key).all()
+            payouts = WeeklyDrawPayout.query.order_by(WeeklyDrawPayout.draw_id).all()
+            self.assertEqual(len(payouts), len(draws))
+            self.assertEqual([payout.draw_id for payout in payouts], [draw.id for draw in draws])
+            self.assertTrue(all(payout.paid_at is None for payout in payouts))
+            self.assertTrue(all(payout.paid_by_email is None for payout in payouts))
+
+        response = self.client.get('/admin')
+        self.assertEqual(response.status_code, 200)
+        with self.app.app_context():
+            self.assertEqual(WeeklyDrawPayout.query.count(), WeeklyDraw.query.count())
+
+    def test_app_startup_creates_payout_table_and_backfills_existing_draws(self):
+        database_file = tempfile.NamedTemporaryFile(delete=False, suffix='.db')
+        database_file.close()
+        config = {
+            'TESTING': True,
+            'WTF_CSRF_ENABLED': False,
+            'SQLALCHEMY_DATABASE_URI': f'sqlite:///{database_file.name}',
+            'SECRET_KEY': 'test-secret',
+        }
+        existing_app = None
+        restarted_app = None
+        try:
+            existing_app = create_app(config)
+            with existing_app.app_context():
+                WeeklyDrawPayout.__table__.drop(db.engine)
+                draw = WeeklyDraw(
+                    week_key='2026-W01',
+                    winner_name='Alex',
+                    winner_email='alex@example.com',
+                    winner_total=80,
+                    eligible_count=2,
+                    drawn_at=datetime.now(timezone.utc),
+                )
+                db.session.add(draw)
+                db.session.commit()
+                draw_id = draw.id
+                db.session.remove()
+                db.engine.dispose()
+
+            restarted_app = create_app(config)
+            with restarted_app.app_context():
+                payout = WeeklyDrawPayout.query.filter_by(draw_id=draw_id).one()
+                self.assertIsNone(payout.paid_at)
+                self.assertIsNone(payout.paid_by_email)
+                db.session.remove()
+                db.engine.dispose()
+        finally:
+            for configured_app in (existing_app, restarted_app):
+                if configured_app is not None:
+                    with configured_app.app_context():
+                        db.session.remove()
+                        db.engine.dispose()
+            os.unlink(database_file.name)
+
+    def test_admin_cannot_mark_draw_without_winner_paid(self):
+        with self.app.app_context():
+            draw = WeeklyDraw(
+                week_key='2026-W01',
+                winner_name=None,
+                winner_email=None,
+                winner_total=None,
+                eligible_count=0,
+                drawn_at=datetime.now(timezone.utc),
+            )
+            db.session.add(draw)
+            db.session.commit()
+            draw_id = draw.id
+
+        self.sign_in(self.admin_id)
+        response = self.client.post('/admin', data={
+            'action': 'mark_draw_paid',
+            'draw_id': draw_id,
+        }, follow_redirects=True)
+        self.assertIn(b'There is no winner to mark as paid', response.data)
+        with self.app.app_context():
+            payout = WeeklyDrawPayout.query.filter_by(draw_id=draw_id).one()
+            self.assertIsNone(payout.paid_at)
+            self.assertIsNone(payout.paid_by_email)
+
+    def test_only_admin_can_mark_draw_winner_paid(self):
+        with self.app.app_context():
+            draw = WeeklyDraw(
+                week_key='2026-W01',
+                winner_name='Alex',
+                winner_email='alex@example.com',
+                winner_total=80,
+                eligible_count=2,
+                drawn_at=datetime.now(timezone.utc),
+            )
+            db.session.add(draw)
+            db.session.commit()
+            draw_id = draw.id
+
+        self.sign_in(self.blair_id)
+        response = self.client.post('/admin', data={
+            'action': 'mark_draw_paid',
+            'draw_id': draw_id,
+        })
+        self.assertEqual(response.status_code, 403)
+        with self.app.app_context():
+            self.assertEqual(
+                WeeklyDrawPayout.query.filter_by(draw_id=draw_id).count(),
+                0,
+            )
+
     def test_admin_player_history_shows_only_most_recent_week(self):
         current_key, current_start = current_week()
         previous_start = current_start - timedelta(days=7)
@@ -531,6 +715,9 @@ class WeeklyLeagueTests(unittest.TestCase):
             self.assertEqual(draw.winner_email, 'alex@example.com')
             self.assertEqual(draw.winner_total, 85)
             self.assertEqual(draw.eligible_count, 2)
+            payout = WeeklyDrawPayout.query.filter_by(draw_id=draw.id).one()
+            self.assertIsNone(payout.paid_at)
+            self.assertIsNone(payout.paid_by_email)
 
         self.sign_in(self.admin_id)
         admin_page = self.client.get('/admin')
@@ -558,6 +745,8 @@ class WeeklyLeagueTests(unittest.TestCase):
             draw = WeeklyDraw.query.filter_by(week_key=previous_key).one()
             self.assertIsNone(draw.winner_name)
             self.assertEqual(draw.eligible_count, 0)
+            payout = WeeklyDrawPayout.query.filter_by(draw_id=draw.id).one()
+            self.assertIsNone(payout.paid_at)
 
     def test_empty_previous_week_still_gets_a_no_winner_record(self):
         _, this_monday = current_week()

@@ -75,15 +75,32 @@
     <div class="admin-table-wrap">
       {% if weekly_draws %}
         <table class="admin-table">
-          <thead><tr><th>WEEK</th><th>WINNER</th><th>CONTACT</th><th class="numeric">ELIGIBLE</th><th class="numeric">WINNER TOTAL</th></tr></thead>
+          <thead><tr><th>WEEK</th><th>WINNER</th><th>CONTACT</th><th class="numeric">ELIGIBLE</th><th class="numeric">WINNER TOTAL</th><th>PAYOUT STATUS</th></tr></thead>
           <tbody>
             {% for draw in weekly_draws %}
+              {% set payout = payouts_by_draw_id.get(draw.id) %}
               <tr>
                 <td>{{ draw.week_key }}</td>
                 <td>{{ draw.winner_name or 'No eligible winner' }}</td>
                 <td>{{ draw.winner_email or '-' }}</td>
                 <td class="numeric">{{ draw.eligible_count }}</td>
                 <td class="numeric">{{ draw.winner_total if draw.winner_total is not none else '-' }}</td>
+                <td>
+                  {% if payout and payout.paid_at %}
+                    <span class="payout-status payout-paid">PAID</span>
+                    <small>{{ payout.paid_at.strftime('%Y-%m-%d %H:%M UTC') }} by {{ payout.paid_by_email }}</small>
+                  {% elif draw.winner_email %}
+                    <span class="payout-status payout-unpaid">UNPAID</span>
+                    <form method="post" action="{{ url_for('admin') }}" onsubmit="return confirm('Confirm store credit was paid to {{ draw.winner_email }}?')">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <input type="hidden" name="action" value="mark_draw_paid">
+                      <input type="hidden" name="draw_id" value="{{ draw.id }}">
+                      <button class="admin-action-button" type="submit">Mark paid</button>
+                    </form>
+                  {% else %}
+                    <span>-</span>
+                  {% endif %}
+                </td>
               </tr>
             {% endfor %}
           </tbody>

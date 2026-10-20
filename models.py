@@ -35,6 +35,16 @@ class WeeklyDraw(db.Model):
     eligible_count = db.Column(db.Integer, nullable=False, default=0)
     drawn_at = db.Column(db.DateTime(timezone=True), nullable=False)
 
+    payout = db.relationship('WeeklyDrawPayout', back_populates='draw', uselist=False)
+
+
+class WeeklyDrawPayout(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    draw_id = db.Column(db.Integer, db.ForeignKey('weekly_draw.id'), nullable=False, unique=True)
+    paid_at = db.Column(db.DateTime(timezone=True))
+    paid_by_email = db.Column(db.String(255))
+    draw = db.relationship('WeeklyDraw', back_populates='payout')
+
 
 class WeeklyEntry(db.Model):
     id = db.Column(db.Integer, primary_key=True)
