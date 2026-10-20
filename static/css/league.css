@@ -91,6 +91,9 @@ h2 { margin-bottom: 0; font: 600 27px 'Space Grotesk', sans-serif; letter-spacin
 .score-input-row input::placeholder { color: #aeb5af; }
 .score-input-row button { min-width: 82px; height: 46px; padding: 0 13px; color: #f4f5ef; border: 1px solid #a6bfa0; background: #31553c; cursor: pointer; font-size: 10px; font-weight: 700; }
 .score-input-row button span { margin-left: 8px; font-size: 18px; vertical-align: -1px; }
+.score-entry-toggle { margin-top: 12px; padding: 6px 0; color: var(--sand); border: 0; background: none; cursor: pointer; font-size: 10px; font-weight: 700; text-decoration: underline; }
+.entry-preference-status:empty { display: none; }
+.entry-preference-status { display: block; margin-top: 6px; color: #c6d0c4; font-size: 10px; }
 .field-error { margin: 7px 0 0; color: #ffe2d8; font-size: 11px; }
 .google-button { min-height: 47px; display: flex; align-items: center; gap: 11px; padding: 0 12px; color: var(--ink); background: var(--forest); font-size: 12px; font-weight: 700; cursor: pointer; }
 .google-g { color: var(--blue); font: 700 17px 'Space Grotesk', sans-serif; }

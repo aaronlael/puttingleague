@@ -20,7 +20,7 @@
       <div><p class="eyebrow">THE FIELD</p><h2>Leaderboard</h2></div>
       <div class="rank-indicator" aria-label="Your rank this week">
         <span class="rank-indicator-label">YOUR RANK</span>
-        <strong>{% if player_rank %}#{{ player_rank }}{% else %}--{% endif %}</strong>
+        <strong>{% if player_rank %}{% if player_rank_tied %}T{{ player_rank }}{% else %}#{{ player_rank }}{% endif %}{% else %}--{% endif %}</strong>
         <span class="rank-indicator-context">{% if player_rank %}OF {{ participants }}{% elif current_user.is_authenticated %}LOG A SET{% else %}SIGN IN{% endif %}</span>
       </div>
     </div>
@@ -29,7 +29,7 @@
       <ol class="standings-list">
         {% for entry in standings %}
           <li class="standings-row {% if current_user.is_authenticated and entry.user_id == current_user.id %}is-you{% endif %}">
-            <span class="player-cell"><span class="rank-number">{{ '%02d'|format(loop.index) }}</span><span class="player-name">{{ entry.user.name }}{% if current_user.is_authenticated and entry.user_id == current_user.id %}<span class="you-tag">YOU</span>{% endif %}{% set win_count = draw_wins.get(entry.user.email|lower, 0) %}{% if win_count %}<span class="draw-wins" title="Weekly random draw winner {{ win_count }} {{ 'time' if win_count == 1 else 'times' }}" aria-label="Weekly random draw winner {{ win_count }} {{ 'time' if win_count == 1 else 'times' }}">👑 ×{{ win_count }}</span>{% endif %}</span></span>
+            <span class="player-cell"><span class="rank-number">{% if entry.user_id in tied_user_ids %}T{{ rank_by_user[entry.user_id] }}{% else %}{{ '%02d'|format(rank_by_user[entry.user_id]) }}{% endif %}</span><span class="player-name">{{ entry.user.name }}{% if current_user.is_authenticated and entry.user_id == current_user.id %}<span class="you-tag">YOU</span>{% endif %}{% set win_count = draw_wins.get(entry.user.email|lower, 0) %}{% if win_count %}<span class="draw-wins" title="Weekly random draw winner {{ win_count }} {{ 'time' if win_count == 1 else 'times' }}" aria-label="Weekly random draw winner {{ win_count }} {{ 'time' if win_count == 1 else 'times' }}">👑 ×{{ win_count }}</span>{% endif %}</span></span>
             <span class="sessions-cell"><span class="round-scores">{% for score in entry.completed_scores %}<span>{{ score }}</span>{% endfor %}</span><strong class="sessions-count">{{ entry.score_count }}/5</strong></span>
             <strong class="total-score">{{ entry.total }}</strong>
           </li>
@@ -60,7 +60,7 @@
         {% for slot in range(5) %}<span class="progress-slot {% if slot < score_count %}filled{% endif %}">{% if player_entry and player_entry.scores[slot] is not none %}{{ player_entry.scores[slot] }}{% else %}<i>{{ '%02d'|format(slot + 1) }}</i>{% endif %}</span>{% endfor %}
       </div>
       {% if score_count < 5 %}
-        <form class="score-form" method="post" action="{{ url_for('submit_score') }}">
+        <form class="score-form" method="post" action="{{ url_for('submit_score') }}" data-entry-user="{{ current_user.id }}">
           {{ form.hidden_tag() }}
           <label for="score"><span data-manual-label>SET {{ score_count + 1 }} / 5 - MADE (0-20)</span><span data-tracker-label hidden>SET {{ score_count + 1 }} / 5 - TRACK EACH PUTT</span></label>
           <div class="score-input-row manual-score-entry">{{ form.score(id='score', min='0', max='20', placeholder='0-20', inputmode='numeric', required=true) }}<button type="submit" aria-label="Submit made putts">ADD <span>+</span></button></div>
@@ -84,6 +84,8 @@
             </div>
             <button class="tracker-submit" type="submit" data-tracker-submit disabled>LOG SET <span>&#8594;</span></button>
           </div>
+          <button class="score-entry-toggle" type="button" data-entry-mode aria-pressed="false" hidden>Enter score manually</button>
+          <span class="entry-preference-status" data-entry-preference-status role="status" aria-live="polite"></span>
         </form>
       {% else %}
         <div class="card-complete"><span>5 / 5</span><p>All sets complete. You made <strong>{{ player_entry.total }}</strong> of 100 putts.</p></div>
@@ -113,7 +115,7 @@
         {% if previous_standings %}
           <ol class="history-list">
             {% for entry in previous_standings %}
-              <li><span class="history-rank">{{ '%02d'|format(loop.index) }}</span><span class="history-player">{{ entry.user.name }}{% set win_count = draw_wins.get(entry.user.email|lower, 0) %}{% if win_count %}<span class="draw-wins" title="Weekly random draw winner {{ win_count }} {{ 'time' if win_count == 1 else 'times' }}" aria-label="Weekly random draw winner {{ win_count }} {{ 'time' if win_count == 1 else 'times' }}">👑 ×{{ win_count }}</span>{% endif %}<small>{{ entry.score_count }} / 5 sets</small></span><strong>{{ entry.total }}</strong></li>
+              <li><span class="history-rank">{% if entry.user_id in previous_tied_user_ids %}T{{ previous_rank_by_user[entry.user_id] }}{% else %}{{ '%02d'|format(previous_rank_by_user[entry.user_id]) }}{% endif %}</span><span class="history-player">{{ entry.user.name }}{% set win_count = draw_wins.get(entry.user.email|lower, 0) %}{% if win_count %}<span class="draw-wins" title="Weekly random draw winner {{ win_count }} {{ 'time' if win_count == 1 else 'times' }}" aria-label="Weekly random draw winner {{ win_count }} {{ 'time' if win_count == 1 else 'times' }}">👑 ×{{ win_count }}</span>{% endif %}<small>{{ entry.score_count }} / 5 sets</small></span><strong>{{ entry.total }}</strong></li>
             {% endfor %}
           </ol>
         {% else %}

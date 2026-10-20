@@ -7,6 +7,9 @@
   var manualEntry = form.querySelector('.manual-score-entry');
   var manualLabel = form.querySelector('[data-manual-label]');
   var trackerLabel = form.querySelector('[data-tracker-label]');
+  var entryModeButton = form.querySelector('[data-entry-mode]');
+  var preferenceStatus = form.querySelector('[data-entry-preference-status]');
+  var preferenceKey = 'puttingleague.score-entry-mode.' + form.getAttribute('data-entry-user');
   var madeCount = 0;
   var results = [];
   var target = 20;
@@ -45,6 +48,36 @@
     }
   }
 
+  function loadManualMode() {
+    try {
+      return window.localStorage.getItem(preferenceKey) === 'manual';
+    } catch (error) {
+      if (error.name !== 'SecurityError' && error.name !== 'QuotaExceededError') throw error;
+      preferenceStatus.textContent = 'Browser storage is unavailable; using the putt tracker.';
+      return false;
+    }
+  }
+
+  function setEntryMode(manualMode) {
+    manualEntry.hidden = !manualMode;
+    tracker.hidden = manualMode;
+    manualLabel.hidden = !manualMode;
+    trackerLabel.hidden = manualMode;
+    entryModeButton.textContent = manualMode ? 'Use putt tracker' : 'Enter score manually';
+    entryModeButton.setAttribute('aria-pressed', manualMode);
+    render();
+  }
+
+  function saveManualMode(manualMode) {
+    try {
+      window.localStorage.setItem(preferenceKey, manualMode ? 'manual' : 'tracker');
+      preferenceStatus.textContent = '';
+    } catch (error) {
+      if (error.name !== 'SecurityError' && error.name !== 'QuotaExceededError') throw error;
+      preferenceStatus.textContent = 'Browser storage is unavailable; this choice will not be remembered.';
+    }
+  }
+
   resultButtons.forEach(function (button) {
     button.addEventListener('click', function () {
       if (results.length >= target) return;
@@ -62,9 +95,12 @@
     render();
   });
 
-  manualEntry.hidden = true;
-  manualLabel.hidden = true;
-  trackerLabel.hidden = false;
-  tracker.hidden = false;
-  render();
+  entryModeButton.hidden = false;
+  setEntryMode(loadManualMode());
+
+  entryModeButton.addEventListener('click', function () {
+    var manualMode = manualEntry.hidden;
+    setEntryMode(manualMode);
+    saveManualMode(manualMode);
+  });
 })();

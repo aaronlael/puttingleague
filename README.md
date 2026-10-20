@@ -2,7 +2,7 @@
 
 ## Putting League
 
-A weekly putting competition with Google sign-in, up to five sessions per player, and a Monday-to-Sunday UTC leaderboard. Each session records made putts for the weekly task (20 putts per session by default, configurable with `WEEKLY_TASK`). Players are ranked by total made putts so far, with completed session count shown beside each total. A new ISO week starts a fresh board while previous weeks remain stored.
+A weekly putting competition with Google sign-in, up to five sessions per player, and a Monday-to-Sunday UTC leaderboard. Each session records made putts for the weekly task (20 putts per session by default, configurable with `WEEKLY_TASK`), either by tracking makes and misses or by entering the made-putt total directly. The entry-mode choice is remembered in the current browser separately for each signed-in player. Players are ranked by total made putts so far; players tied on total share a place, and the next place reflects the number of players ahead. Completed session count is shown beside each total. A new ISO week starts a fresh board while previous weeks remain stored.
 
 On the sign-in panel, players can select **Keep me logged in for 30 days**. This uses Flask-Login's signed, HttpOnly remember cookie; it does not store credentials in browser storage. Leaving it unchecked keeps the sign-in limited to the browser session.
 

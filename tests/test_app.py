@@ -216,7 +216,7 @@ class WeeklyLeagueTests(unittest.TestCase):
         with self.client.session_transaction() as session:
             self.assertFalse(session['remember_login'])
 
-    def test_signed_in_player_sees_putt_tracker_and_manual_score_fallback(self):
+    def test_signed_in_player_can_choose_putt_tracker_or_manual_score_entry(self):
         self.sign_in(self.alex_id)
         response = self.client.get('/')
         self.assertEqual(response.status_code, 200)
@@ -225,10 +225,14 @@ class WeeklyLeagueTests(unittest.TestCase):
         self.assertIn(b'data-putt-result="miss"', response.data)
         self.assertIn(b'data-putt-undo', response.data)
         self.assertIn(b'class="score-input-row manual-score-entry"', response.data)
+        self.assertIn(f'data-entry-user="{self.alex_id}"'.encode(), response.data)
+        self.assertIn(b'data-entry-mode aria-pressed="false"', response.data)
 
         with self.client.get('/static/js/putt-tracker.js') as script_response:
             self.assertEqual(script_response.status_code, 200)
             self.assertIn(b'data-tracker-submit', script_response.data)
+            self.assertIn(b'localStorage.getItem(preferenceKey)', script_response.data)
+            self.assertIn(b'localStorage.setItem(preferenceKey', script_response.data)
 
     def test_active_leaderboard_renders_all_current_week_players(self):
         week_key, week_start = current_week()
@@ -283,6 +287,38 @@ class WeeklyLeagueTests(unittest.TestCase):
         self.assertIn(b'YOUR RANK', response.data)
         self.assertIn(b'#2', response.data)
         self.assertIn(b'OF 2', response.data)
+
+    def test_leaderboard_uses_competition_ranks_for_tied_totals(self):
+        week_key, week_start = current_week()
+        with self.app.app_context():
+            db.session.add_all([
+                WeeklyEntry(
+                    user_id=self.alex_id,
+                    week_key=week_key,
+                    week_start=week_start,
+                    score_1=18,
+                ),
+                WeeklyEntry(
+                    user_id=self.blair_id,
+                    week_key=week_key,
+                    week_start=week_start,
+                    score_1=18,
+                ),
+                WeeklyEntry(
+                    user_id=self.admin_id,
+                    week_key=week_key,
+                    week_start=week_start,
+                    score_1=12,
+                ),
+            ])
+            db.session.commit()
+
+        self.sign_in(self.alex_id)
+        response = self.client.get('/')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'<span class="rank-number">T1</span>', response.data)
+        self.assertIn(b'<span class="rank-number">03</span>', response.data)
+        self.assertIn(b'<strong>T1</strong>', response.data)
 
     def test_player_without_current_week_entry_sees_unranked_state(self):
         self.sign_in(self.alex_id)

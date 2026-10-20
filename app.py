@@ -41,6 +41,24 @@ def week_key_for(monday):
     return f'{iso_year}-W{iso_week:02d}'
 
 
+def competition_ranks(standings):
+    total_counts = {}
+    for entry in standings:
+        total_counts[entry.total] = total_counts.get(entry.total, 0) + 1
+
+    rank_by_user = {}
+    tied_user_ids = set()
+    for index, entry in enumerate(standings):
+        if index and entry.total == standings[index - 1].total:
+            rank_by_user[entry.user_id] = rank_by_user[standings[index - 1].user_id]
+        else:
+            rank_by_user[entry.user_id] = index + 1
+        if total_counts[entry.total] > 1:
+            tied_user_ids.add(entry.user_id)
+
+    return rank_by_user, tied_user_ids
+
+
 def parse_week_key(value):
     if not re.fullmatch(r'\d{4}-W\d{2}', value or ''):
         return None
@@ -132,11 +150,14 @@ def create_app(test_config=None):
             entries,
             key=lambda entry: (-entry.total, -entry.score_count, entry.user.name.casefold()),
         )
+        rank_by_user, tied_user_ids = competition_ranks(standings)
         previous_entries = WeeklyEntry.query.filter_by(week_key=previous_week_key).all()
-        previous_standings = sorted(
+        all_previous_standings = sorted(
             previous_entries,
             key=lambda entry: (-entry.total, -entry.score_count, entry.user.name.casefold()),
-        )[:5]
+        )
+        previous_rank_by_user, previous_tied_user_ids = competition_ranks(all_previous_standings)
+        previous_standings = all_previous_standings[:5]
         previous_draw = WeeklyDraw.query.filter_by(week_key=previous_week_key).first()
         draw_wins = {}
         for winner_email, in WeeklyDraw.query.with_entities(WeeklyDraw.winner_email).filter(
@@ -150,14 +171,7 @@ def create_app(test_config=None):
             player_entry = WeeklyEntry.query.filter_by(
                 week_key=week_key, user_id=current_user.id
             ).first()
-            player_rank = next(
-                (
-                    rank
-                    for rank, entry in enumerate(standings, start=1)
-                    if entry.user_id == current_user.id
-                ),
-                None,
-            )
+            player_rank = rank_by_user.get(current_user.id)
         form = ScoreForm()
         return render_template(
             'pages/placeholder.home.html',
@@ -165,14 +179,21 @@ def create_app(test_config=None):
             week_start=week_start,
             week_end=week_start + timedelta(days=6),
             standings=standings,
+            rank_by_user=rank_by_user,
+            tied_user_ids=tied_user_ids,
             previous_week_key=previous_week_key,
             previous_standings=previous_standings,
+            previous_rank_by_user=previous_rank_by_user,
+            previous_tied_user_ids=previous_tied_user_ids,
             previous_draw=previous_draw,
             draw_wins=draw_wins,
             participants=len(entries),
             sessions_total=sum(entry.score_count for entry in entries),
             player_entry=player_entry,
             player_rank=player_rank,
+            player_rank_tied=(
+                current_user.is_authenticated and current_user.id in tied_user_ids
+            ),
             form=form,
             weekly_task=(
                 scheduled_challenge.challenge.title
