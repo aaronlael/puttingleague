@@ -2,7 +2,7 @@
 
 ## Putting League
 
-A weekly putting competition with Google sign-in, up to five sessions per player, and a Monday-to-Sunday UTC leaderboard. Each session records made putts for the weekly task (20 putts per session by default, configurable with `WEEKLY_TASK`), either by tracking makes and misses or by entering the made-putt total directly. The entry-mode choice is remembered in the current browser separately for each signed-in player. Players are ranked by total made putts so far; players tied on total share a place, and the next place reflects the number of players ahead. Completed session count is shown beside each total. A new ISO week starts a fresh board while previous weeks remain stored.
+A weekly putting competition with Google sign-in, up to five sessions per player, and a Monday-to-Sunday leaderboard based on US Mountain Time (`America/Denver`), including daylight saving time. Each session records made putts for the weekly task (20 putts per session by default, configurable with `WEEKLY_TASK`), either by tracking makes and misses or by entering the made-putt total directly. The entry-mode choice is remembered in the current browser separately for each signed-in player. Players are ranked by total made putts so far; players tied on total share a place, and the next place reflects the number of players ahead. Completed session count is shown beside each total. A new ISO week starts a fresh board while previous weeks remain stored.
 
 On the sign-in panel, players can select **Keep me logged in for 30 days**. This uses Flask-Login's signed, HttpOnly remember cookie; it does not store credentials in browser storage. Leaving it unchecked keeps the sign-in limited to the browser session.
 
@@ -16,7 +16,7 @@ On the sign-in panel, players can select **Keep me logged in for 30 days**. This
 
 The SQLite database is created as `database.db` on first run. Back it up regularly, use HTTPS for public deployment, and consider an external database if usage or recovery requirements grow. Set `ADMIN_EMAIL` in the deployment environment to `aaron.j.lael@gmail.com` to grant that Google account access to `/admin` (this is the default). The admin page lets you create challenges, assign them to ISO weeks, review weekly score histories, mark weekly draw winners as paid, and permanently remove player accounts and their scores. New challenge, schedule, weekly-draw, and draw-payout tables are created automatically; existing database tables are unchanged. Every draw, including existing historical draws, gets an unpaid payout record automatically. Marking a winner as paid records the UTC time and admin email for audit purposes.
 
-When the first request arrives after a week ends, the app records one random winner from players who submitted all five rounds. The homepage keeps last week's top five and winner in a collapsed history panel; the winner's email is shown only in the admin draw history. This is request-triggered rather than a timed email notification, so the draw happens on the first app request after the UTC week boundary.
+When the first request arrives after a week ends, the app records one random winner from players who submitted all five rounds. The homepage keeps last week's top five and winner in a collapsed history panel; the winner's email is shown only in the admin draw history. This is request-triggered rather than a timed email notification, so the draw happens on the first app request after the Mountain Time week boundary.
 
 ### Merge Into Existing BCSS on PythonAnywhere
 

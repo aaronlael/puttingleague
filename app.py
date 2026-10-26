@@ -6,6 +6,7 @@ from datetime import date, datetime, timedelta, timezone
 import os
 import re
 import secrets
+from zoneinfo import ZoneInfo
 
 from authlib.integrations.flask_client import OAuth
 from flask import Flask, abort, flash, redirect, render_template, request, session, url_for
@@ -30,6 +31,7 @@ login_manager = LoginManager()
 login_manager.login_view = 'home'
 login_manager.login_message = 'Sign in with Google to submit a score.'
 oauth = OAuth()
+MOUNTAIN_TIME = ZoneInfo('America/Denver')
 
 
 class ScoreForm(FlaskForm):
@@ -40,7 +42,7 @@ class ScoreForm(FlaskForm):
 
 
 def current_week(now=None):
-    now = now or datetime.now(timezone.utc)
+    now = (now or datetime.now(timezone.utc)).astimezone(MOUNTAIN_TIME)
     monday = (now - timedelta(days=now.weekday())).date()
     return week_key_for(monday), monday
 

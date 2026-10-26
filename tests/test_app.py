@@ -137,6 +137,17 @@ class WeeklyLeagueTests(unittest.TestCase):
         self.assertEqual(start.weekday(), 0)
         self.assertEqual(key, f'{start.isocalendar().year}-W{start.isocalendar().week:02d}')
 
+    def test_week_boundary_uses_mountain_time_with_daylight_saving(self):
+        winter_before_midnight = datetime(2026, 1, 5, 6, 59, tzinfo=timezone.utc)
+        winter_at_midnight = datetime(2026, 1, 5, 7, 0, tzinfo=timezone.utc)
+        summer_before_midnight = datetime(2026, 7, 6, 5, 59, tzinfo=timezone.utc)
+        summer_at_midnight = datetime(2026, 7, 6, 6, 0, tzinfo=timezone.utc)
+
+        self.assertEqual(current_week(winter_before_midnight)[0], '2026-W01')
+        self.assertEqual(current_week(winter_at_midnight)[0], '2026-W02')
+        self.assertEqual(current_week(summer_before_midnight)[0], '2026-W27')
+        self.assertEqual(current_week(summer_at_midnight)[0], '2026-W28')
+
     def test_score_submission_requires_sign_in(self):
         response = self.client.post('/scores', data={'score': 4})
         self.assertEqual(response.status_code, 302)
@@ -148,6 +159,7 @@ class WeeklyLeagueTests(unittest.TestCase):
         self.assertIn(b'Five sets of twenty putts, one hundred putts total', response.data)
         self.assertIn(b'PUTTS EACH', response.data)
         self.assertIn(b'TOTAL PUTTS', response.data)
+        self.assertIn(b'Mountain Time', response.data)
 
     def test_homepage_offers_thirty_day_remember_option(self):
         response = self.client.get('/')

@@ -9,6 +9,7 @@ mysql-connector-python
 python-dotenv
 gunicorn
 coverage
+tzdata
 # ecdsa
 # paramiko
 # pycrypto
