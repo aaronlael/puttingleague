@@ -3,7 +3,15 @@
 {% block content %}
 <section class="event-heading">
   <div class="event-copy">
-    <p class="eyebrow"><span class="live-dot"></span> WEEKLY EVENT <span class="eyebrow-divider">/</span> {{ week_key }}</p>
+    <div class="eyebrow"><span class="live-dot"></span> WEEKLY EVENT <span class="eyebrow-divider">/</span> {{ week_key }}
+      <details class="league-help">
+        <summary aria-label="About the Putting League" title="About the Putting League">?</summary>
+        <div class="league-help-panel" role="region" aria-label="About the Putting League">
+          <strong>What is Putting League?</strong>
+          <p>A free virtual putting league for golfers in the Salt Lake Valley. Each week brings a rotating challenge: five sets of 20 putts, or 100 reps total. The goal is to build a steady practice habit by showing up and putting in reps.</p>
+        </div>
+      </details>
+    </div>
     <h1>Make every<br><span>putt count.</span></h1>
     <p class="event-dates">{{ week_start.strftime('%b') }} {{ week_start.day }} <span>-</span> {{ week_end.strftime('%b') }} {{ week_end.day }} <span class="date-zone">Mountain Time</span></p>
   </div>

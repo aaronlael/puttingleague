@@ -252,6 +252,10 @@ def create_app(test_config=None):
             ),
         )
 
+    @app.get('/privacy')
+    def privacy():
+        return render_template('pages/privacy.html')
+
     @app.route('/admin', methods=['GET', 'POST'])
     @login_required
     def admin():

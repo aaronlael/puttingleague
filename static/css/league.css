@@ -243,6 +243,14 @@ h2 { font-size: 28px; }
 .flash-message { color: var(--ink); background: #25332a; }
 .site-footer { color: var(--muted); }
 .site-footer span:first-child { color: var(--sand); }
+.privacy-notice a { color: var(--sand); text-decoration: underline; text-underline-offset: 3px; }
+.privacy-page { max-width: 760px; }
+.privacy-page > .eyebrow { margin-bottom: 12px; }
+.privacy-page h1 { margin-bottom: 32px; }
+.privacy-page h2 { margin: 28px 0 9px; font-size: 19px; }
+.privacy-page p:not(.eyebrow) { color: #c6d0c4; font-size: 14px; line-height: 1.75; }
+.privacy-page a { color: var(--sand); text-decoration: underline; text-underline-offset: 3px; }
+.privacy-page h2 + p { margin-bottom: 0; }
 .admin-form input, .admin-form textarea, .admin-form select { border-radius: 3px; background: #141d17; }
 .admin-form button { color: #172019; border-radius: 3px; background: var(--sand); }
 .admin-action-button { color: #172019; background: var(--sand); }
@@ -255,6 +263,14 @@ h2 { font-size: 28px; }
 .draw-result p:last-child { color: #bdc6ba; }
 :focus-visible { outline: 2px solid var(--sand); outline-offset: 3px; }
 .draw-wins { display: inline-flex; align-items: center; gap: 3px; margin-left: 7px; padding: 2px 5px; color: var(--sand); border: 1px solid #59654d; border-radius: 3px; background: #20291f; font-size: 10px; font-weight: 700; vertical-align: 1px; white-space: nowrap; }
+.event-copy { position: relative; z-index: 2; }
+.league-help { display: inline-block; margin-left: 8px; vertical-align: middle; }
+.league-help > summary { width: 36px; height: 36px; display: inline-grid; place-items: center; color: var(--ink); border: 1px solid #71806f; border-radius: 50%; cursor: pointer; font: 600 13px 'Space Grotesk', sans-serif; list-style: none; touch-action: manipulation; }
+.league-help > summary::-webkit-details-marker { display: none; }
+.league-help > summary:hover, .league-help[open] > summary { color: var(--paper); border-color: var(--sand); background: var(--sand); }
+.league-help-panel { position: absolute; top: 36px; left: 0; z-index: 5; width: min(340px, calc(100vw - 48px)); padding: 18px; color: var(--ink); border: 1px solid #536255; border-radius: 5px; background: #1b2a21; box-shadow: 0 14px 32px rgba(0, 0, 0, .35); font-size: 12px; line-height: 1.6; }
+.league-help-panel strong { color: var(--sand); font: 600 16px var(--display); }
+.league-help-panel p { margin: 8px 0 0; color: #c6d0c4; }
 
 .task-format {
   display: grid;

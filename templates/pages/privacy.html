@@ -1,0 +1,18 @@
+{% extends 'layouts/main.html' %}
+{% block title %}Privacy{% endblock %}
+{% block content %}
+<section class="privacy-page">
+  <p class="eyebrow">PUTTING LEAGUE</p>
+  <h1>Privacy</h1>
+  <p>This site uses Google sign-in to let players submit scores. When you sign in, we receive your Google account ID, email address, and profile name. We do not receive your Google password.</p>
+  <h2>League information</h2>
+  <p>We store account details and weekly scores to operate the league. Player names, scores, and standings are visible on the public leaderboard, including past results. Weekly draw winner names and totals may also be shown publicly; winner email addresses are visible only to the league administrator.</p>
+  <h2>Cookies and browser storage</h2>
+  <p>The site uses an essential session cookie to keep you signed in and protect forms. If you choose “Keep me logged in for 30 days,” Flask-Login also sets a persistent sign-in cookie. Your score-entry preference is saved in your browser’s local storage; it is not a cookie.</p>
+  <h2>Third-party services and tracking</h2>
+  <p>Google provides sign-in and the fonts used on this site, so your browser connects to Google for those services. This site does not use analytics or advertising tracking.</p>
+  <h2>Retention and questions</h2>
+  <p>Account details and scores are kept for league operation and competition history. A league administrator can delete an account and its scores. Completed weekly draw records may retain a winner’s name and email for draw history.</p>
+  <p>For privacy questions or requests, contact <a href="mailto:aaron.j.lael@gmail.com">aaron.j.lael@gmail.com</a>.</p>
+</section>
+{% endblock %}

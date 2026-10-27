@@ -160,6 +160,32 @@ class WeeklyLeagueTests(unittest.TestCase):
         self.assertIn(b'PUTTS EACH', response.data)
         self.assertIn(b'TOTAL PUTTS', response.data)
         self.assertIn(b'Mountain Time', response.data)
+        self.assertIn(b'aria-label="About the Putting League"', response.data)
+        self.assertIn(b'free virtual putting league', response.data)
+        self.assertIn(b'Salt Lake Valley', response.data)
+        self.assertIn(b'five sets of 20 putts, or 100 reps total', response.data)
+        self.assertIn(b'build a steady practice habit', response.data)
+
+    def test_privacy_page_explains_data_cookies_and_tracking(self):
+        response = self.client.get('/privacy')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'Google account ID, email address, and profile name', response.data)
+        self.assertIn(b'visible on the public leaderboard', response.data)
+        self.assertIn(b'persistent sign-in cookie', response.data)
+        self.assertIn(b'local storage', response.data)
+        self.assertIn(b'does not use analytics or advertising tracking', response.data)
+        self.assertIn(b'mailto:aaron.j.lael@gmail.com', response.data)
+        self.assertIn(b'href="/privacy"', self.client.get('/').data)
+
+    def test_homepage_declares_putting_league_favicon(self):
+        with self.client.get('/') as response:
+            self.assertIn(
+                b'rel="icon" type="image/svg+xml" href="/static/ico/putting-league.svg"',
+                response.data,
+            )
+        with self.client.get('/static/ico/putting-league.svg') as icon_response:
+            self.assertEqual(icon_response.status_code, 200)
+            self.assertIn(b'<svg', icon_response.data)
 
     def test_homepage_offers_thirty_day_remember_option(self):
         response = self.client.get('/')
