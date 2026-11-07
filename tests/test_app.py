@@ -1,3 +1,4 @@
+import json
 import os
 import tempfile
 import unittest
@@ -8,6 +9,7 @@ from app import create_app, current_week, oauth, week_key_for
 from config import SQLALCHEMY_ENGINE_OPTIONS, database_uri_from_environment
 from models import (
     Challenge,
+    PuttSequence,
     User,
     WeeklyChallenge,
     WeeklyDraw,
@@ -131,6 +133,77 @@ class WeeklyLeagueTests(unittest.TestCase):
             self.assertIn(b'number of made putts, from 0 to 20', response.data)
         response = self.client.post('/scores', data={'score': 0}, follow_redirects=True)
         self.assertIn(b'Session 1 of 5 saved.', response.data)
+
+    def test_tracker_sequence_is_saved_and_player_history_shows_progress_and_streak(self):
+        self.sign_in(self.alex_id)
+        sequence = [True, False] * 5 + [True] * 6 + [False] * 4
+        response = self.client.post('/scores', data={
+            'score': sum(sequence),
+            'putt_sequence': json.dumps(sequence),
+        }, follow_redirects=True)
+        self.assertIn(b'Session 1 of 5 saved.', response.data)
+
+        with self.app.app_context():
+            saved = PuttSequence.query.one()
+            self.assertEqual(saved.set_number, 1)
+            self.assertEqual(json.loads(saved.results), sequence)
+
+        response = self.client.get('/history')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'My history', response.data)
+        self.assertIn(b'Improved: first 10 5/10, last 10 6/10', response.data)
+        self.assertIn(b'Longest hot streak', response.data)
+        self.assertIn(b'>6</strong>', response.data)
+        self.assertIn('1–5:', response.data.decode())
+
+    def test_manual_entries_show_totals_without_inventing_a_sequence(self):
+        self.sign_in(self.alex_id)
+        self.client.post('/scores', data={'score': 12})
+
+        with self.app.app_context():
+            self.assertEqual(PuttSequence.query.count(), 0)
+
+        response = self.client.get('/history')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'12 / 20 made', response.data)
+        self.assertIn(b'Manual entry', response.data)
+        self.assertNotIn(b'Longest hot streak', response.data)
+
+    def test_history_requires_sign_in_and_only_shows_signed_in_players_data(self):
+        self.assertEqual(self.client.get('/history').status_code, 302)
+        key, start = current_week()
+        with self.app.app_context():
+            db.session.add(WeeklyEntry(
+                user_id=self.blair_id,
+                week_key=key,
+                week_start=start,
+                score_1=20,
+            ))
+            db.session.commit()
+
+        self.sign_in(self.alex_id)
+        response = self.client.get('/history?email=blair@example.com')
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn(b'Blair', response.data)
+        self.assertNotIn(b'20 / 20 made', response.data)
+        self.assertIn(b'alex@example.com', response.data)
+
+    def test_tracker_sequence_must_match_score_and_have_twenty_boolean_results(self):
+        self.sign_in(self.alex_id)
+        invalid_sequences = [
+            [True] * 11 + [False] * 9,
+            [1] * 10 + [False] * 10,
+            [True] * 10 + [False] * 9,
+        ]
+        for sequence in invalid_sequences:
+            response = self.client.post('/scores', data={
+                'score': 10,
+                'putt_sequence': json.dumps(sequence),
+            }, follow_redirects=True)
+            self.assertIn(b'make/miss sequence must contain 20 results matching your score', response.data)
+        with self.app.app_context():
+            self.assertEqual(WeeklyEntry.query.count(), 0)
+            self.assertEqual(PuttSequence.query.count(), 0)
 
     def test_week_key_is_iso_monday_based(self):
         key, start = current_week()
@@ -269,6 +342,7 @@ class WeeklyLeagueTests(unittest.TestCase):
         self.assertIn(b'data-putt-tracker', response.data)
         self.assertIn(b'data-putt-result="make"', response.data)
         self.assertIn(b'data-putt-result="miss"', response.data)
+        self.assertIn(b'name="putt_sequence"', response.data)
         self.assertIn(b'data-putt-undo', response.data)
         self.assertIn(b'class="score-input-row manual-score-entry"', response.data)
         self.assertIn(f'data-entry-user="{self.alex_id}"'.encode(), response.data)
@@ -672,6 +746,12 @@ class WeeklyLeagueTests(unittest.TestCase):
                 week_key=key,
                 week_start=start,
                 score_1=12,
+                putt_sequences=[
+                    PuttSequence(
+                        set_number=1,
+                        results=json.dumps([True] * 12 + [False] * 8),
+                    ),
+                ],
             ))
             db.session.commit()
 
@@ -693,6 +773,7 @@ class WeeklyLeagueTests(unittest.TestCase):
         with self.app.app_context():
             self.assertIsNone(db.session.get(User, self.blair_id))
             self.assertEqual(WeeklyEntry.query.filter_by(user_id=self.blair_id).count(), 0)
+            self.assertEqual(PuttSequence.query.count(), 0)
 
     def test_previous_week_draw_is_once_only_and_only_full_rounds_are_eligible(self):
         _, this_monday = current_week()

@@ -1,0 +1,78 @@
+{% extends 'layouts/main.html' %}
+{% block title %}My history{% endblock %}
+{% block content %}
+<section class="admin-heading">
+  <div>
+    <p class="eyebrow">PLAYER SUMMARY</p>
+    <h1>My history</h1>
+    <p>{{ current_user.name }} · {{ current_user.email }}</p>
+  </div>
+  <a class="header-link" href="{{ url_for('home') }}">Back to standings</a>
+</section>
+
+{% set session_count = namespace(value=0) %}
+{% set made_count = namespace(value=0) %}
+{% set tracked_count = namespace(value=0) %}
+{% for week in history %}
+  {% set session_count.value = session_count.value + week.sets|length %}
+  {% set made_count.value = made_count.value + week.total %}
+  {% for set in week.sets %}
+    {% if set.analysis %}{% set tracked_count.value = tracked_count.value + 1 %}{% endif %}
+  {% endfor %}
+{% endfor %}
+
+<section class="admin-grid player-summary-grid">
+  <article class="player-stat"><span>SESSIONS</span><strong>{{ session_count.value }}</strong></article>
+  <article class="player-stat"><span>TOTAL MADE</span><strong>{{ made_count.value }}</strong></article>
+  <article class="player-stat"><span>TRACKED SETS</span><strong>{{ tracked_count.value }}</strong></article>
+</section>
+
+<section class="admin-section admin-section-wide player-history-section">
+  <h2>Session history</h2>
+  <p>Each set shows its total. Make/miss detail is available only for sets recorded with the tracker; manual entries have no shot sequence.</p>
+  {% if history %}
+    {% for week in history %}
+      <article class="player-week">
+        <header class="player-week-heading">
+          <div><p class="eyebrow">{{ week.week_key }}</p><h3>Week of {{ week.week_start.strftime('%b %d, %Y') }}</h3></div>
+          <div class="player-week-total"><span>{{ week.sets|length }} / 5 SETS</span><strong>{{ week.total }}</strong><small>made</small></div>
+        </header>
+        {% if week.sets %}
+          <div class="player-set-list">
+            {% for set in week.sets %}
+              <section class="player-set">
+                <div class="player-set-summary">
+                  <strong>Set {{ set.number }}</strong>
+                  <span>{{ set.score }} / 20 made</span>
+                </div>
+                {% if set.analysis %}
+                  <div class="putt-sequence" aria-label="Putt-by-putt sequence">
+                    {% for result in set.analysis.results %}
+                      <span class="putt-dot {% if result %}putt-made{% else %}putt-missed{% endif %}" aria-label="Putt {{ loop.index }}: {{ 'make' if result else 'miss' }}" title="Putt {{ loop.index }}: {{ 'make' if result else 'miss' }}">{{ loop.index }}</span>
+                    {% endfor %}
+                  </div>
+                  <div class="putt-segments">
+                    {% for segment in set.analysis.segments %}
+                      <span>{{ segment.start }}–{{ segment.end }}: <strong>{{ segment.made }}/5</strong></span>
+                    {% endfor %}
+                  </div>
+                  <div class="putt-analysis">
+                    <span class="trend-{{ set.analysis.trend|lower }}">{{ set.analysis.trend }}: first 10 {{ set.analysis.first_half_makes }}/10, last 10 {{ set.analysis.second_half_makes }}/10</span>
+                    <span>Longest hot streak (consecutive makes): <strong>{{ set.analysis.longest_streak }}</strong></span>
+                  </div>
+                {% else %}
+                  <p class="manual-set-note">Manual entry · make/miss sequence not recorded</p>
+                {% endif %}
+              </section>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="admin-empty">No sets were submitted this week.</p>
+        {% endif %}
+      </article>
+    {% endfor %}
+  {% else %}
+    <p class="admin-empty">No sessions recorded yet. Submit a set from the weekly standings page to start your history.</p>
+  {% endif %}
+</section>
+{% endblock %}

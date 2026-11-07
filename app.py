@@ -3,6 +3,7 @@
 #----------------------------------------------------------------------------#
 
 from datetime import date, datetime, timedelta, timezone
+import json
 import os
 import re
 import secrets
@@ -12,13 +13,14 @@ from authlib.integrations.flask_client import OAuth
 from flask import Flask, abort, flash, redirect, render_template, request, session, url_for
 from flask_login import LoginManager, current_user, login_required, login_user, logout_user
 from flask_wtf import CSRFProtect, FlaskForm
-from sqlalchemy import update
+from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from wtforms import IntegerField
 from wtforms.validators import InputRequired, NumberRange
 
 from models import (
     Challenge,
+    PuttSequence,
     User,
     WeeklyChallenge,
     WeeklyDraw,
@@ -107,6 +109,43 @@ def parse_week_key(value):
         return date.fromisocalendar(int(value[:4]), int(value[6:]), 1)
     except ValueError:
         return None
+
+
+def analyze_putt_sequence(results):
+    longest_streak = 0
+    current_streak = 0
+    for made in results:
+        if made:
+            current_streak += 1
+            longest_streak = max(longest_streak, current_streak)
+        else:
+            current_streak = 0
+
+    first_half_makes = sum(results[:10])
+    second_half_makes = sum(results[10:])
+    if second_half_makes > first_half_makes:
+        trend = 'Improved'
+    elif second_half_makes < first_half_makes:
+        trend = 'Declined'
+    else:
+        trend = 'Steady'
+
+    segments = [
+        {
+            'start': start + 1,
+            'end': start + 5,
+            'made': sum(results[start:start + 5]),
+        }
+        for start in range(0, 20, 5)
+    ]
+    return {
+        'results': results,
+        'segments': segments,
+        'first_half_makes': first_half_makes,
+        'second_half_makes': second_half_makes,
+        'trend': trend,
+        'longest_streak': longest_streak,
+    }
 
 
 def finalize_completed_weeks(current_week_key):
@@ -304,6 +343,11 @@ def create_app(test_config=None):
                 elif user.id == current_user.id:
                     flash('You cannot delete your own admin account here.')
                 else:
+                    PuttSequence.query.filter(
+                        PuttSequence.weekly_entry_id.in_(
+                            select(WeeklyEntry.id).where(WeeklyEntry.user_id == user.id)
+                        )
+                    ).delete(synchronize_session=False)
                     WeeklyEntry.query.filter_by(user_id=user.id).delete(synchronize_session=False)
                     db.session.delete(user)
                     db.session.commit()
@@ -410,6 +454,23 @@ def create_app(test_config=None):
             flash('Enter the number of made putts, from 0 to 20.')
             return redirect(url_for('home'))
 
+        sequence_value = request.form.get('putt_sequence', '').strip()
+        sequence = None
+        if sequence_value:
+            try:
+                sequence = json.loads(sequence_value)
+            except json.JSONDecodeError:
+                flash('The make/miss sequence is invalid. Please record the set again.')
+                return redirect(url_for('home'))
+            if (
+                not isinstance(sequence, list)
+                or len(sequence) != 20
+                or any(type(result) is not bool for result in sequence)
+                or sum(sequence) != form.score.data
+            ):
+                flash('The make/miss sequence must contain 20 results matching your score.')
+                return redirect(url_for('home'))
+
         week_key, week_start = current_week()
         entry = WeeklyEntry.query.filter_by(
             week_key=week_key, user_id=current_user.id
@@ -431,9 +492,49 @@ def create_app(test_config=None):
             return redirect(url_for('home'))
 
         setattr(entry, f'score_{next_slot}', form.score.data)
+        if sequence is not None:
+            db.session.add(PuttSequence(
+                weekly_entry=entry,
+                set_number=next_slot,
+                results=json.dumps(sequence),
+            ))
         db.session.commit()
         flash(f'Session {next_slot} of 5 saved.')
         return redirect(url_for('home'))
+
+    @app.get('/history')
+    @login_required
+    def player_history():
+        entries = WeeklyEntry.query.filter_by(user_id=current_user.id).order_by(
+            WeeklyEntry.week_start.desc()
+        ).all()
+        sequences = {}
+        entry_ids = [entry.id for entry in entries]
+        if entry_ids:
+            for saved_sequence in PuttSequence.query.filter(
+                PuttSequence.weekly_entry_id.in_(entry_ids)
+            ).all():
+                sequences[(saved_sequence.weekly_entry_id, saved_sequence.set_number)] = (
+                    analyze_putt_sequence(json.loads(saved_sequence.results))
+                )
+
+        history = []
+        for entry in entries:
+            sets = []
+            for set_number, score in enumerate(entry.scores, start=1):
+                if score is not None:
+                    sets.append({
+                        'number': set_number,
+                        'score': score,
+                        'analysis': sequences.get((entry.id, set_number)),
+                    })
+            history.append({
+                'week_key': entry.week_key,
+                'week_start': entry.week_start,
+                'sets': sets,
+                'total': entry.total,
+            })
+        return render_template('pages/history.html', history=history)
 
     @app.post('/logout')
     @login_required

@@ -141,6 +141,36 @@ h2 { margin-bottom: 0; font: 600 27px 'Space Grotesk', sans-serif; letter-spacin
 .admin-empty { padding: 20px 0; color: var(--muted); font-size: 12px; }
 .admin-warning { color: #8e2f22 !important; }
 .admin-section-wide { grid-column: 1 / -1; }
+.player-summary-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.player-stat { display: grid; gap: 7px; padding: 18px; border: 1px solid var(--line); background: var(--forest); }
+.player-stat span, .player-week-total span { color: var(--muted); font-size: 9px; font-weight: 700; }
+.player-stat strong { color: var(--sage); font: 600 27px 'Space Grotesk', sans-serif; }
+.player-history-section { margin-top: 20px; }
+.player-history-section > p { max-width: 720px; }
+.player-week { margin-top: 20px; border: 1px solid var(--line); }
+.player-week-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 15px 18px; background: var(--forest); }
+.player-week-heading .eyebrow { margin-bottom: 5px; color: var(--orange); }
+.player-week-heading h3 { margin: 0; font: 600 17px 'Space Grotesk', sans-serif; }
+.player-week-total { display: grid; grid-template-columns: auto auto; align-items: center; column-gap: 9px; text-align: right; }
+.player-week-total span { grid-column: 1 / -1; }
+.player-week-total strong { font: 600 22px 'Space Grotesk', sans-serif; }
+.player-week-total small { color: var(--muted); font-size: 9px; }
+.player-set { padding: 15px 18px; border-top: 1px solid var(--line); }
+.player-set-summary { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 11px; }
+.player-set-summary strong { font: 600 13px 'Space Grotesk', sans-serif; }
+.player-set-summary span, .manual-set-note { color: var(--muted); font-size: 11px; }
+.putt-sequence { display: grid; grid-template-columns: repeat(20, minmax(0, 1fr)); gap: 4px; }
+.putt-dot { display: grid; place-items: center; min-width: 0; aspect-ratio: 1; border: 1px solid var(--line); font: 500 9px 'Space Grotesk', sans-serif; }
+.putt-made { color: var(--paper); border-color: var(--sage); background: var(--sage); }
+.putt-missed { color: var(--muted); }
+.putt-segments { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; margin-top: 10px; color: var(--muted); font-size: 10px; }
+.putt-segments span { padding: 6px 8px; border: 1px solid var(--line); }
+.putt-segments strong, .putt-analysis strong { color: var(--ink); }
+.putt-analysis { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; margin-top: 10px; color: var(--muted); font-size: 10px; }
+.trend-improved { color: var(--sage); }
+.trend-declined { color: var(--orange); }
+.trend-steady { color: var(--blue); }
+.manual-set-note { margin: 0; }
 .history-section { margin-top: 32px; border-top: 1px solid #ccd3cb; border-bottom: 1px solid #ccd3cb; }
 .history-details > summary { min-height: 70px; display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 22px; cursor: pointer; list-style: none; }
 .history-details > summary::-webkit-details-marker { display: none; }
@@ -165,6 +195,8 @@ h2 { margin-bottom: 0; font: 600 27px 'Space Grotesk', sans-serif; letter-spacin
 
 @media (max-width: 760px) {
   .site-header { height: 64px; padding: 0 22px; }
+  .header-account { gap: 9px; font-size: 10px; }
+  .header-account .account-name { display: none; }
   .page-shell { width: min(100% - 36px, 540px); padding: 39px 0 56px; }
   .event-heading { align-items: start; padding-bottom: 25px; }
   .event-heading::after { right: 8%; width: 20%; }
@@ -175,9 +207,13 @@ h2 { margin-bottom: 0; font: 600 27px 'Space Grotesk', sans-serif; letter-spacin
   .score-panel { order: -1; }
   .admin-grid { grid-template-columns: 1fr; gap: 28px; }
   .admin-section-wide { grid-column: auto; }
+  .player-summary-grid { grid-template-columns: 1fr; gap: 10px; }
   .admin-heading { align-items: start; flex-direction: column; }
   .admin-heading h1 { font-size: 40px; }
   .history-grid { grid-template-columns: 1fr; gap: 20px; }
+  .putt-sequence { gap: 2px; }
+  .putt-dot { font-size: 7px; }
+  .player-set { padding: 13px 10px; }
   .history-details > summary { grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; padding: 12px 0; }
   .history-details > summary .eyebrow { grid-column: 1; }
   .history-details > summary strong { grid-column: 1; }

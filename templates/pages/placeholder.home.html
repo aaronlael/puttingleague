@@ -70,6 +70,7 @@
       {% if score_count < 5 %}
         <form class="score-form" method="post" action="{{ url_for('submit_score') }}" data-entry-user="{{ current_user.id }}">
           {{ form.hidden_tag() }}
+          <input type="hidden" name="putt_sequence" value="">
           <label for="score"><span data-manual-label>SET {{ score_count + 1 }} / 5 - MADE (0-20)</span><span data-tracker-label hidden>SET {{ score_count + 1 }} / 5 - TRACK EACH PUTT</span></label>
           <div class="score-input-row manual-score-entry">{{ form.score(id='score', min='0', max='20', placeholder='0-20', inputmode='numeric', required=true) }}<button type="submit" aria-label="Submit made putts">ADD <span>+</span></button></div>
           {% for error in form.score.errors %}<p class="field-error">{{ error }}</p>{% endfor %}

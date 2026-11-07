@@ -57,6 +57,11 @@ class WeeklyEntry(db.Model):
     score_4 = db.Column(db.Integer)
     score_5 = db.Column(db.Integer)
     user = db.relationship('User', back_populates='entries')
+    putt_sequences = db.relationship(
+        'PuttSequence',
+        back_populates='weekly_entry',
+        cascade='all, delete-orphan',
+    )
 
     __table_args__ = (
         db.UniqueConstraint('user_id', 'week_key', name='one_entry_per_player_week'),
@@ -83,3 +88,20 @@ class WeeklyEntry(db.Model):
     @property
     def total(self):
         return sum(self.completed_scores)
+
+
+class PuttSequence(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    weekly_entry_id = db.Column(
+        db.Integer,
+        db.ForeignKey('weekly_entry.id', ondelete='CASCADE'),
+        nullable=False,
+        index=True,
+    )
+    set_number = db.Column(db.Integer, nullable=False)
+    results = db.Column(db.Text, nullable=False)
+    weekly_entry = db.relationship('WeeklyEntry', back_populates='putt_sequences')
+
+    __table_args__ = (
+        db.UniqueConstraint('weekly_entry_id', 'set_number', name='one_sequence_per_set'),
+    )

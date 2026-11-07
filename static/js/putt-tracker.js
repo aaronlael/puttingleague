@@ -4,6 +4,7 @@
 
   var form = tracker.closest('form');
   var scoreInput = form.querySelector('#score');
+  var sequenceInput = form.querySelector('[name="putt_sequence"]');
   var manualEntry = form.querySelector('.manual-score-entry');
   var manualLabel = form.querySelector('[data-manual-label]');
   var trackerLabel = form.querySelector('[data-tracker-label]');
@@ -46,6 +47,7 @@
       status.textContent = attempts === 0 ? 'Tap a result for each putt.' : 'Keep going - ' + (target - attempts) + ' left.';
       scoreInput.value = '';
     }
+    sequenceInput.value = !tracker.hidden && complete ? JSON.stringify(results) : '';
   }
 
   function loadManualMode() {
