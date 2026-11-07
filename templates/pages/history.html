@@ -32,11 +32,11 @@
   <p>Each set shows its total. Make/miss detail is available only for sets recorded with the tracker; manual entries have no shot sequence.</p>
   {% if history %}
     {% for week in history %}
-      <article class="player-week">
-        <header class="player-week-heading">
+      <details class="player-week">
+        <summary class="player-week-heading">
           <div><p class="eyebrow">{{ week.week_key }}</p><h3>Week of {{ week.week_start.strftime('%b %d, %Y') }}</h3></div>
           <div class="player-week-total"><span>{{ week.sets|length }} / 5 SETS</span><strong>{{ week.total }}</strong><small>made</small></div>
-        </header>
+        </summary>
         {% if week.sets %}
           <div class="player-set-list">
             {% for set in week.sets %}
@@ -69,7 +69,7 @@
         {% else %}
           <p class="admin-empty">No sets were submitted this week.</p>
         {% endif %}
-      </article>
+      </details>
     {% endfor %}
   {% else %}
     <p class="admin-empty">No sessions recorded yet. Submit a set from the weekly standings page to start your history.</p>

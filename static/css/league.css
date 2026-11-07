@@ -148,7 +148,10 @@ h2 { margin-bottom: 0; font: 600 27px 'Space Grotesk', sans-serif; letter-spacin
 .player-history-section { margin-top: 20px; }
 .player-history-section > p { max-width: 720px; }
 .player-week { margin-top: 20px; border: 1px solid var(--line); }
-.player-week-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 15px 18px; background: var(--forest); }
+.player-week-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 15px 18px; background: var(--forest); cursor: pointer; list-style: none; }
+.player-week-heading::-webkit-details-marker { display: none; }
+.player-week-heading::after { flex: none; content: '+'; color: var(--orange); font: 600 22px 'Space Grotesk', sans-serif; }
+.player-week[open] > .player-week-heading::after { content: '-'; }
 .player-week-heading .eyebrow { margin-bottom: 5px; color: var(--orange); }
 .player-week-heading h3 { margin: 0; font: 600 17px 'Space Grotesk', sans-serif; }
 .player-week-total { display: grid; grid-template-columns: auto auto; align-items: center; column-gap: 9px; text-align: right; }

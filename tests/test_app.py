@@ -155,6 +155,8 @@ class WeeklyLeagueTests(unittest.TestCase):
         self.assertIn(b'Longest hot streak', response.data)
         self.assertIn(b'>6</strong>', response.data)
         self.assertIn('1–5:', response.data.decode())
+        self.assertIn(b'<details class="player-week">', response.data)
+        self.assertNotIn(b'<details class="player-week" open>', response.data)
 
     def test_manual_entries_show_totals_without_inventing_a_sequence(self):
         self.sign_in(self.alex_id)
