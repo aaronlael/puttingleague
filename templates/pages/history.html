@@ -10,31 +10,27 @@
   <a class="header-link" href="{{ url_for('home') }}">Back to standings</a>
 </section>
 
-{% set session_count = namespace(value=0) %}
-{% set made_count = namespace(value=0) %}
-{% set tracked_count = namespace(value=0) %}
-{% for week in history %}
-  {% set session_count.value = session_count.value + week.sets|length %}
-  {% set made_count.value = made_count.value + week.total %}
-  {% for set in week.sets %}
-    {% if set.analysis %}{% set tracked_count.value = tracked_count.value + 1 %}{% endif %}
-  {% endfor %}
-{% endfor %}
-
 <section class="admin-grid player-summary-grid">
-  <article class="player-stat"><span>SESSIONS</span><strong>{{ session_count.value }}</strong></article>
-  <article class="player-stat"><span>TOTAL MADE</span><strong>{{ made_count.value }}</strong></article>
-  <article class="player-stat"><span>TRACKED SETS</span><strong>{{ tracked_count.value }}</strong></article>
+  <article class="player-stat"><span>SESSIONS</span><strong>{{ total_sessions }}</strong></article>
+  <article class="player-stat"><span>TOTAL MADE</span><strong>{{ total_made }}</strong></article>
+  <article class="player-stat"><span>TRACKED SETS</span><strong>{{ tracked_set_count }}</strong></article>
 </section>
 
 <section class="admin-section admin-section-wide player-history-section">
   <h2>Session history</h2>
   <p>Each set shows its total. Make/miss detail is available only for sets recorded with the tracker; manual entries have no shot sequence.</p>
+  {% if total_weeks %}
+    <p class="history-count">Showing {{ history|length }} of {{ total_weeks }} weeks</p>
+  {% endif %}
   {% if history %}
     {% for week in history %}
       <details class="player-week">
         <summary class="player-week-heading">
-          <div><p class="eyebrow">{{ week.week_key }}</p><h3>Week of {{ week.week_start.strftime('%b %d, %Y') }}</h3></div>
+          <div>
+            <p class="eyebrow">{{ week.week_key }}</p>
+            <h3>Week of {{ week.week_start.strftime('%b %d, %Y') }}</h3>
+            <p class="player-week-challenge">{{ week.challenge_title or 'Challenge not recorded' }}</p>
+          </div>
           <div class="player-week-total"><span>{{ week.sets|length }} / 5 SETS</span><strong>{{ week.total }}</strong><small>made</small></div>
         </summary>
         {% if week.sets %}
@@ -71,6 +67,9 @@
         {% endif %}
       </details>
     {% endfor %}
+    {% if history_limit < total_weeks %}
+      <a class="history-more" href="{{ url_for('player_history', limit=history_limit + 10) }}">More history <span>+10 weeks</span></a>
+    {% endif %}
   {% else %}
     <p class="admin-empty">No sessions recorded yet. Submit a set from the weekly standings page to start your history.</p>
   {% endif %}

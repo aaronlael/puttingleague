@@ -137,6 +137,20 @@ class WeeklyLeagueTests(unittest.TestCase):
     def test_tracker_sequence_is_saved_and_player_history_shows_progress_and_streak(self):
         self.sign_in(self.alex_id)
         sequence = [True, False] * 5 + [True] * 6 + [False] * 4
+        week_key, _ = current_week()
+        with self.app.app_context():
+            challenge = Challenge(
+                title='Clockwork Circle',
+                description='Make putts from three marked distances.',
+            )
+            db.session.add(challenge)
+            db.session.flush()
+            db.session.add(WeeklyChallenge(
+                week_key=week_key,
+                challenge_id=challenge.id,
+            ))
+            db.session.commit()
+
         response = self.client.post('/scores', data={
             'score': sum(sequence),
             'putt_sequence': json.dumps(sequence),
@@ -155,6 +169,7 @@ class WeeklyLeagueTests(unittest.TestCase):
         self.assertIn(b'Longest hot streak', response.data)
         self.assertIn(b'>6</strong>', response.data)
         self.assertIn('1–5:', response.data.decode())
+        self.assertIn(b'Clockwork Circle', response.data)
         self.assertIn(b'<details class="player-week">', response.data)
         self.assertNotIn(b'<details class="player-week" open>', response.data)
 
@@ -170,6 +185,39 @@ class WeeklyLeagueTests(unittest.TestCase):
         self.assertIn(b'12 / 20 made', response.data)
         self.assertIn(b'Manual entry', response.data)
         self.assertNotIn(b'Longest hot streak', response.data)
+
+    def test_history_shows_ten_recent_weeks_then_loads_more_with_all_time_totals(self):
+        with self.app.app_context():
+            first_monday = datetime(2025, 1, 6).date()
+            db.session.add_all(
+                WeeklyEntry(
+                    user_id=self.alex_id,
+                    week_key=f'2025-W{week_number:02d}',
+                    week_start=first_monday + timedelta(weeks=week_number - 1),
+                    score_1=week_number,
+                )
+                for week_number in range(1, 13)
+            )
+            db.session.commit()
+
+        self.sign_in(self.alex_id)
+        response = self.client.get('/history')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'Showing 10 of 12 weeks', response.data)
+        self.assertIn(b'2025-W12', response.data)
+        self.assertIn(b'2025-W03', response.data)
+        self.assertNotIn(b'2025-W02', response.data)
+        self.assertIn(b'>12</strong>', response.data)
+        self.assertIn(b'>78</strong>', response.data)
+        self.assertIn(b'href="/history?limit=20"', response.data)
+
+        response = self.client.get('/history?limit=20')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'Showing 12 of 12 weeks', response.data)
+        self.assertIn(b'2025-W02', response.data)
+        self.assertNotIn(b'More history', response.data)
+        self.assertIn(b'>12</strong>', response.data)
+        self.assertIn(b'>78</strong>', response.data)
 
     def test_history_requires_sign_in_and_only_shows_signed_in_players_data(self):
         self.assertEqual(self.client.get('/history').status_code, 302)

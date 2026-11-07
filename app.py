@@ -13,7 +13,7 @@ from authlib.integrations.flask_client import OAuth
 from flask import Flask, abort, flash, redirect, render_template, request, session, url_for
 from flask_login import LoginManager, current_user, login_required, login_user, logout_user
 from flask_wtf import CSRFProtect, FlaskForm
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.exc import IntegrityError
 from wtforms import IntegerField
 from wtforms.validators import InputRequired, NumberRange
@@ -505,9 +505,37 @@ def create_app(test_config=None):
     @app.get('/history')
     @login_required
     def player_history():
-        entries = WeeklyEntry.query.filter_by(user_id=current_user.id).order_by(
+        entries_query = WeeklyEntry.query.filter_by(user_id=current_user.id).order_by(
             WeeklyEntry.week_start.desc()
-        ).all()
+        )
+        total_weeks = entries_query.count()
+        requested_limit = request.args.get('limit', 10, type=int) or 10
+        history_limit = min(max(requested_limit, 10), total_weeks or 10)
+        entries = entries_query.limit(history_limit).all()
+        summary = db.session.query(
+            func.count(WeeklyEntry.score_1)
+            + func.count(WeeklyEntry.score_2)
+            + func.count(WeeklyEntry.score_3)
+            + func.count(WeeklyEntry.score_4)
+            + func.count(WeeklyEntry.score_5),
+            func.coalesce(func.sum(WeeklyEntry.score_1), 0)
+            + func.coalesce(func.sum(WeeklyEntry.score_2), 0)
+            + func.coalesce(func.sum(WeeklyEntry.score_3), 0)
+            + func.coalesce(func.sum(WeeklyEntry.score_4), 0)
+            + func.coalesce(func.sum(WeeklyEntry.score_5), 0),
+        ).filter(WeeklyEntry.user_id == current_user.id).one()
+        tracked_set_count = PuttSequence.query.join(WeeklyEntry).filter(
+            WeeklyEntry.user_id == current_user.id
+        ).count()
+        week_keys = {entry.week_key for entry in entries}
+        challenge_titles = {}
+        if week_keys:
+            challenge_titles = dict(
+                db.session.query(WeeklyChallenge.week_key, Challenge.title)
+                .join(Challenge)
+                .filter(WeeklyChallenge.week_key.in_(week_keys))
+                .all()
+            )
         sequences = {}
         entry_ids = [entry.id for entry in entries]
         if entry_ids:
@@ -531,10 +559,19 @@ def create_app(test_config=None):
             history.append({
                 'week_key': entry.week_key,
                 'week_start': entry.week_start,
+                'challenge_title': challenge_titles.get(entry.week_key),
                 'sets': sets,
                 'total': entry.total,
             })
-        return render_template('pages/history.html', history=history)
+        return render_template(
+            'pages/history.html',
+            history=history,
+            total_weeks=total_weeks,
+            history_limit=history_limit,
+            total_sessions=summary[0],
+            total_made=summary[1],
+            tracked_set_count=tracked_set_count,
+        )
 
     @app.post('/logout')
     @login_required
