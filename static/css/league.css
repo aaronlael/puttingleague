@@ -152,14 +152,16 @@ h2 { margin-bottom: 0; font: 600 27px 'Space Grotesk', sans-serif; letter-spacin
 .history-more:hover { background: var(--forest); }
 .history-more span { color: var(--muted); font-size: 9px; }
 .player-week { margin-top: 20px; border: 1px solid var(--line); }
-.player-week-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 15px 18px; background: var(--forest); cursor: pointer; list-style: none; }
+.player-week-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto 20px; align-items: center; gap: 16px; padding: 15px 18px; background: var(--forest); cursor: pointer; list-style: none; }
 .player-week-heading::-webkit-details-marker { display: none; }
-.player-week-heading::after { flex: none; content: '+'; color: var(--orange); font: 600 22px 'Space Grotesk', sans-serif; }
+.player-week-heading::after { justify-self: end; content: '+'; color: var(--orange); font: 600 22px 'Space Grotesk', sans-serif; }
 .player-week[open] > .player-week-heading::after { content: '-'; }
+.player-week-heading > div:first-child { min-width: 0; }
 .player-week-heading .eyebrow { margin-bottom: 5px; color: var(--orange); }
 .player-week-heading h3 { margin: 0; font: 600 17px 'Space Grotesk', sans-serif; }
-.player-week-challenge { margin: 5px 0 0; color: var(--muted); font-size: 11px; }
+.player-week-challenge { margin: 5px 0 0; color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
 .player-week-total { display: grid; grid-template-columns: auto auto; align-items: center; column-gap: 9px; text-align: right; }
+.player-week-heading > .player-week-total { justify-self: end; }
 .player-week-total span { grid-column: 1 / -1; }
 .player-week-total strong { font: 600 22px 'Space Grotesk', sans-serif; }
 .player-week-total small { color: var(--muted); font-size: 9px; }
@@ -222,6 +224,8 @@ h2 { margin-bottom: 0; font: 600 27px 'Space Grotesk', sans-serif; letter-spacin
   .putt-sequence { gap: 2px; }
   .putt-dot { font-size: 7px; }
   .player-set { padding: 13px 10px; }
+  .player-week-heading { grid-template-columns: minmax(0, 1fr) auto 16px; gap: 9px; padding: 13px 10px; }
+  .player-week-total { column-gap: 5px; }
   .history-details > summary { grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; padding: 12px 0; }
   .history-details > summary .eyebrow { grid-column: 1; }
   .history-details > summary strong { grid-column: 1; }
