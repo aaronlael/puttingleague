@@ -310,6 +310,23 @@ class WeeklyLeagueTests(unittest.TestCase):
             self.assertEqual(icon_response.status_code, 200)
             self.assertIn(b'<svg', icon_response.data)
 
+    def test_homepage_has_social_preview_metadata_and_image(self):
+        response = self.client.get('/', base_url='https://league.example.test')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'<meta property="og:type" content="website">', response.data)
+        self.assertIn(b'<meta property="og:title" content="Make Every Putt Count | Putting League">', response.data)
+        self.assertIn(b'<meta name="twitter:card" content="summary_large_image">', response.data)
+        self.assertIn(
+            b'<meta property="og:image" content="https://league.example.test/static/share-preview.png">',
+            response.data,
+        )
+
+        with self.client.get('/static/share-preview.png') as image:
+            self.assertEqual(image.status_code, 200)
+            self.assertEqual(image.content_type, 'image/png')
+            self.assertEqual(image.data[:8], b'\x89PNG\r\n\x1a\n')
+            self.assertEqual(image.data[16:24], (1200).to_bytes(4, 'big') + (630).to_bytes(4, 'big'))
+
     def test_homepage_offers_thirty_day_remember_option(self):
         response = self.client.get('/')
         self.assertEqual(response.status_code, 200)

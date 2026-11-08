@@ -18,6 +18,10 @@ The SQLite database is created as `database.db` on first run. Back it up regular
 
 When the first request arrives after a week ends, the app records one random winner from players who submitted all five rounds. The homepage keeps last week's top five and winner in a collapsed history panel; the winner's email is shown only in the admin draw history. This is request-triggered rather than a timed email notification, so the draw happens on the first app request after the Mountain Time week boundary.
 
+### Social Preview
+
+The public homepage includes Open Graph and Twitter Card metadata with a 1200 x 630 preview image. Its canonical page and image URLs use the active host and deployment path, including the `/puttingleague` mount. After deploying, share the homepage URL; if Facebook keeps showing an older preview, refresh its cached scrape with the Facebook Sharing Debugger.
+
 ### Merge Into Existing BCSS on PythonAnywhere
 
 Keep the deployed BCSS files in `/home/yourusername/mysite` as they are, including its lowercase `static/` and `templates/` directories. Put this repository beside it, for example in `/home/yourusername/puttingleague`. The existing PythonAnywhere web app and domain stay in use: BCSS remains at `/`, and Putting League is mounted at `/puttingleague`.

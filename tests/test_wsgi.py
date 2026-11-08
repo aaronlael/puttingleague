@@ -32,6 +32,28 @@ class WSGIMountTests(unittest.TestCase):
         finally:
             response.close()
 
+    def test_homepage_social_preview_uses_mounted_absolute_urls(self):
+        response = self.client.get(
+            '/puttingleague/',
+            base_url='https://league.example.test',
+        )
+        page = response.get_data(as_text=True)
+        self.assertIn(
+            '<meta property="og:url" content="https://league.example.test/puttingleague/">',
+            page,
+        )
+        self.assertIn(
+            '<meta property="og:image" content="https://league.example.test/puttingleague/static/share-preview.png">',
+            page,
+        )
+
+        image = self.client.get('/puttingleague/static/share-preview.png')
+        try:
+            self.assertEqual(image.status_code, 200)
+            self.assertEqual(image.content_type, 'image/png')
+        finally:
+            image.close()
+
     def test_putting_league_session_cookie_is_scoped_for_oauth(self):
         response = self.client.get(
             '/puttingleague/',

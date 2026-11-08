@@ -1,5 +1,21 @@
 {% extends 'layouts/main.html' %}
 {% block title %}Weekly standings{% endblock %}
+{% block description %}A free weekly putting challenge for golfers in the Salt Lake Valley. Log five sets of 20 putts, follow the leaderboard, and build a steady practice habit.{% endblock %}
+{% block social_metadata %}
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Putting League">
+  <meta property="og:title" content="Make Every Putt Count | Putting League">
+  <meta property="og:description" content="A free weekly putting challenge for golfers in the Salt Lake Valley. Log five sets of 20 putts, follow the leaderboard, and build a steady practice habit.">
+  <meta property="og:url" content="{{ url_for('home', _external=True) }}">
+  <meta property="og:image" content="{{ url_for('static', filename='share-preview.png', _external=True) }}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Putting League — Make Every Putt Count">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Make Every Putt Count | Putting League">
+  <meta name="twitter:description" content="A free weekly putting challenge for golfers in the Salt Lake Valley. Log five sets of 20 putts, follow the leaderboard, and build a steady practice habit.">
+  <meta name="twitter:image" content="{{ url_for('static', filename='share-preview.png', _external=True) }}">
+{% endblock %}
 {% block content %}
 <section class="event-heading">
   <div class="event-copy">

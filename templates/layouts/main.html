@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Weekly putting league standings and score submission.">
+  <meta name="description" content="{% block description %}Weekly putting league standings and score submission.{% endblock %}">
+  {% block social_metadata %}{% endblock %}
   <title>{% block title %}Putting League{% endblock %} | Putting League</title>
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='ico/putting-league.svg') }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
