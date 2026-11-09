@@ -315,6 +315,10 @@ class WeeklyLeagueTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b'<meta property="og:type" content="website">', response.data)
         self.assertIn(b'<meta property="og:title" content="Make Every Putt Count | Putting League">', response.data)
+        self.assertIn(
+            b'<meta property="og:description" content="A free weekly putting challenge for frolfers in the Salt Lake Valley.',
+            response.data,
+        )
         self.assertIn(b'<meta name="twitter:card" content="summary_large_image">', response.data)
         self.assertIn(
             b'<meta property="og:image" content="https://league.example.test/static/share-preview.png">',
